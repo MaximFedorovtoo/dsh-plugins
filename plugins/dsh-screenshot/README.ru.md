@@ -22,7 +22,7 @@
 [INSTALL.en.md](../../INSTALL.en.md) (англ.). Коротко:
 
 ```sh
-dsh plugin --profile desktop add 'git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot'
+dsh plugin --profile desktop add 'github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot'
 ```
 
 или добавьте индекс репозитория в **Plugins → Discover**:

@@ -67,7 +67,7 @@ methods are in the repository guide: [INSTALL.en.md](../../INSTALL.en.md)
 (English) or [INSTALL.md](../../INSTALL.md) (Russian). The short version:
 
 ```sh
-dsh plugin --profile desktop add 'git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-api-spend'
+dsh plugin --profile desktop add 'github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-api-spend'
 ```
 
 or add the repository index to **Plugins → Discover**:

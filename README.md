@@ -17,6 +17,8 @@
 - Поверхность **Web / Desktop**: плагины добавляют элементы в интерфейс чата.
 - Ничего доустанавливать не нужно: ни Node.js, ни Python, ни компиляторов. Зависимостей у пакетов нет.
 
+Установка проверена end-to-end на реальном профиле: пакеты ставятся и из локальной папки, и из этого репозитория по git-ссылке с `path:`-подкаталогом; строки плагинов собираются в `dsh --profile <name> --dump-config`.
+
 ## Быстрая установка
 
 Подробно, со всеми способами и разбором ошибок — в [INSTALL.md](INSTALL.md). Коротко:
@@ -32,18 +34,26 @@ https://raw.githubusercontent.com/MaximFedorovtoo/dsh-plugins/main/index.json
 **Способ 2 — по ссылке на репозиторий.** **Plugins → Add plugin → Install a third-party plugin** и вставьте адрес нужного пакета:
 
 ```
-git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot
-git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-api-spend
+github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot
+github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-api-spend
 ```
 
-`<commit>` — SHA коммита из [страницы коммитов](https://github.com/MaximFedorovtoo/dsh-plugins/commits/main). Для git-установки на машине должен быть установлен `git`.
+`<commit>` — SHA коммита из [страницы коммитов](https://github.com/MaximFedorovtoo/dsh-plugins/commits/main). Полная форма `git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot` работает так же. Для git-установки на машине должен быть установлен `git`.
 
 **Способ 3 — CLI.** То же самое из терминала:
 
 ```sh
-dsh plugin --profile desktop add 'git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot'
+dsh plugin --profile desktop add 'github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot'
 dsh --profile desktop
 ```
+
+В PowerShell символ `&` в таком аргументе ломается об обёртку `dsh.cmd`; используйте стоп-парсинг или `cmd.exe`:
+
+```powershell
+dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot"
+```
+
+Подробнее — в [INSTALL.md](INSTALL.md#21-из-интерфейса).
 
 **Способ 4 — локальная папка.** Скачайте репозиторий (Code → Download ZIP), распакуйте и укажите в **Add plugin** абсолютный путь к папке плагина, например `C:\Users\Имя\dsh-plugins\plugins\dsh-api-spend` (Windows) или `/Users/имя/dsh-plugins/plugins/dsh-api-spend` (macOS). В CLI то же самое: `dsh plugin --profile desktop add ./dsh-plugins/plugins/dsh-api-spend`.
 

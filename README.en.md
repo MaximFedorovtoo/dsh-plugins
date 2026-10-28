@@ -17,6 +17,8 @@ Both plugins are plain JavaScript with no dependencies and no build step. Instal
 - The **Web/Desktop** surface: the plugins render inside the chat UI.
 - Nothing else: no Node.js, no Python, no compiler. The packages have no dependencies.
 
+Installation is verified end-to-end on a real profile: both the local-folder install and the git install from this repository with a `path:` subdirectory work, and the plugin rows compose in `dsh --profile <name> --dump-config`.
+
 ## Quick start
 
 The full guide, covering every method and every failure mode, is in [INSTALL.en.md](INSTALL.en.md).
@@ -32,18 +34,26 @@ The Discover tab appears after the experimental **Custom plugin indexes** bundle
 **2 — Git address.** **Plugins → Add plugin → Install a third-party plugin** and paste the package you want:
 
 ```
-git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot
-git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-api-spend
+github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot
+github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-api-spend
 ```
 
-`<commit>` is a SHA from the [commit list](https://github.com/MaximFedorovtoo/dsh-plugins/commits/main). A Git install requires `git` on the machine.
+`<commit>` is a SHA from the [commit list](https://github.com/MaximFedorovtoo/dsh-plugins/commits/main). The long form `git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot` works too. A Git install requires `git` on the machine.
 
 **3 — CLI.**
 
 ```sh
-dsh plugin --profile desktop add 'git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot'
+dsh plugin --profile desktop add 'github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot'
 dsh --profile desktop
 ```
+
+In PowerShell the `&` in that argument is eaten by the `dsh.cmd` wrapper; use the stop-parsing token or `cmd.exe`:
+
+```powershell
+dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot"
+```
+
+See [INSTALL.en.md](INSTALL.en.md#21-from-the-ui) for details.
 
 **4 — Local folder.** Download the repository (Code → Download ZIP), unpack it, and give **Add plugin** the absolute path to the plugin folder, for example `C:\Users\Name\dsh-plugins\plugins\dsh-api-spend` or `/Users/name/dsh-plugins/plugins/dsh-api-spend`.
 

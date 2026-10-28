@@ -7,7 +7,7 @@
 
 Оба пакета — чистый JavaScript без зависимостей и без скриптов установки (`prepare`/`build` нет), поэтому ставятся одинаково на Windows, macOS и Linux и не требуют разрешений на запуск кода при установке.
 
-**Что нужно:** DSH 0.2.x (Desktop или CLI) и поверхность Web/Desktop. Проверено на DSH Desktop 0.2.1-rc.3, Windows 11.
+**Что нужно:** DSH 0.2.x (Desktop или CLI) и поверхность Web/Desktop. Проверено на DSH Desktop 0.2.1-rc.3, Windows 11: установка из локальной папки и из GitHub-репозитория (git, подкаталог через `path:`), сборка строк в `--dump-config`.
 
 ---
 
@@ -57,20 +57,36 @@
 **Plugins → Add plugin → Install a third-party plugin** (стрелка рядом с **Add plugin**), вставьте в поле один из адресов:
 
 ```
-git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot
-git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-api-spend
+github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot
+github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-api-spend
 ```
 
 Замените `<commit>` на 40-символьный SHA. Нажмите **Install**, дождитесь pnpm, затем **Enable now**.
+
+Полная форма тоже принимается: `git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot`.
 
 ### 2.2. Из CLI
 
 ```sh
 # подставьте свой профиль и SHA коммита
-dsh plugin --profile desktop add 'git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot'
-dsh plugin --profile desktop add 'git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-api-spend'
+dsh plugin --profile desktop add 'github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot'
+dsh plugin --profile desktop add 'github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-api-spend'
 dsh --profile desktop
 ```
+
+**Важно для Windows и PowerShell.** В аргументе есть символ `&`. Обёртка `dsh` — это `.cmd`-файл, и PowerShell передаёт такой аргумент через `cmd`, который обрезает всё после `&`; pnpm получает адрес без `path:` и падает с `ERR_PNPM_INVALID_DEPENDENCY_NAME`. Рабочие варианты:
+
+```powershell
+# PowerShell: --% отключает разбор остатка строки, кавычки доходят до cmd
+dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot"
+```
+
+```bat
+:: cmd.exe: кавычки сохраняют &
+dsh plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot"
+```
+
+В диалоге **Add plugin** этой проблемы нет: поле передаёт адрес напрямую, без командной оболочки.
 
 Проверить, что слой применился, можно без запуска:
 

@@ -7,7 +7,7 @@ A user guide for DeepSeek Harness (DSH). The repository ships two packages:
 
 Both are plain JavaScript with no dependencies and no install scripts (`prepare`/`build` are absent), so they install the same way on Windows, macOS and Linux, and the installer never asks for permission to run package code.
 
-**You need:** DSH 0.2.x (Desktop or CLI) and the Web/Desktop surface. Tested on DSH Desktop 0.2.1-rc.3, Windows 11.
+**You need:** DSH 0.2.x (Desktop or CLI) and the Web/Desktop surface. Verified on DSH Desktop 0.2.1-rc.3, Windows 11: installation from a local folder and from the GitHub repository (git, subdirectory via `path:`), and the rows composing in `--dump-config`.
 
 ---
 
@@ -57,20 +57,36 @@ The install is pinned to one commit, so the content of the branch cannot change 
 **Plugins → Add plugin → Install a third-party plugin** (the arrow next to **Add plugin**), then paste one of:
 
 ```
-git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot
-git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-api-spend
+github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot
+github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-api-spend
 ```
 
 Replace `<commit>` with the 40-character SHA. Press **Install**, wait for pnpm, then **Enable now**.
+
+The long form is accepted too: `git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot`.
 
 ### 2.2. From the CLI
 
 ```sh
 # use your profile name and commit SHA
-dsh plugin --profile desktop add 'git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-screenshot'
-dsh plugin --profile desktop add 'git+https://github.com/MaximFedorovtoo/dsh-plugins.git#<commit>&path:/plugins/dsh-api-spend'
+dsh plugin --profile desktop add 'github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot'
+dsh plugin --profile desktop add 'github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-api-spend'
 dsh --profile desktop
 ```
+
+**Windows and PowerShell.** The argument contains `&`. The `dsh` wrapper is a `.cmd` file, and PowerShell hands the argument to `cmd`, which cuts everything after `&`; pnpm then receives the address without `path:` and fails with `ERR_PNPM_INVALID_DEPENDENCY_NAME`. Working forms:
+
+```powershell
+# PowerShell: --% stops parsing the rest of the line, quotes reach cmd
+dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot"
+```
+
+```bat
+:: cmd.exe: the quotes keep & literal
+dsh plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-screenshot"
+```
+
+The **Add plugin** dialog has no such problem: the field passes the address directly, without a command shell.
 
 Check the layer without booting:
 
