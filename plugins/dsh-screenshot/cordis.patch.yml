@@ -1,0 +1,17 @@
+# Screenshot input for the Web/Desktop surface.
+#
+# The Host row owns the model-facing side: the `screenshot` and `zoom_image`
+# tools plus the screenshot-reading prompt section. The Client half (declared
+# in package.json `dsh.client`) adds the composer button that attaches a
+# clipboard image or opens the image picker through the composer's own intake.
+- insert:
+    - id: screenshot
+      name: 'dsh-screenshot'
+      config:
+        # Captures are written here so the model can name the exact file it saw.
+        # Empty means <DSH_HOME>/cache/screenshot.
+        cacheDir: ''
+        # Scale applied by `zoom_image` when the caller does not pass one.
+        defaultZoomScale: 2
+        # Hard ceiling for `zoom_image` output, both dimensions.
+        maxZoomScale: 4

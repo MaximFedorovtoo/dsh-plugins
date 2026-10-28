@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "API Spend",
+    "description": "Shows each project's API spend at the provider's official rates below the composer, next to the token counters, with a per-project breakdown and the platform's own totals."
+  }
+}

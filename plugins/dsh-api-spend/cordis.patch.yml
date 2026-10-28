@@ -1,0 +1,28 @@
+- insert:
+    - id: api-spend
+      name: 'dsh-api-spend'
+      config:
+        # Official DeepSeek rates, USD per million tokens (peak hours).
+        # Off-peak is half price; peak is 01:00-04:00 and 06:00-10:00 UTC on
+        # weekdays, excluding Chinese public holidays (list them in `holidays`).
+        currency: USD
+        symbol: '$'
+        priceUnit: 1000000
+        offPeakFactor: 0.5
+        peakWindows:
+          - start: 1
+            end: 4
+          - start: 6
+            end: 10
+        peakWeekdays: [1, 2, 3, 4, 5]
+        holidays: []
+        defaultModel: deepseek-flash
+        models:
+          deepseek-flash:
+            cacheHit: 0.006
+            cacheMiss: 0.3
+            output: 1.2
+          deepseek-v4-pro:
+            cacheHit: 0.044
+            cacheMiss: 1.32
+            output: 3.96

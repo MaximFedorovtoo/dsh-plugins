@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Screenshot Input",
+    "description": "Adds a composer button that attaches a clipboard image or opens the image picker, a click-to-edit attachment rail with pen/arrow/rectangle/text annotation, agent screen and clipboard capture with region zoom, and a reading protocol for annotated screenshots."
+  }
+}
