@@ -1,0 +1,85 @@
+{
+  "format": 1,
+  "title": {
+    "en": "DSH plugins by MaximFedorovtoo",
+    "ru": "Плагины DSH от MaximFedorovtoo",
+    "zh": "MaximFedorovtoo 的 DSH 插件"
+  },
+  "description": {
+    "en": "API spend per project and screenshots as first-class input for DeepSeek Harness.",
+    "ru": "Расходы на API по проектам и скриншоты как полноценный ввод для DeepSeek Harness.",
+    "zh": "为 DeepSeek Harness 提供按项目统计的 API 花费与截图输入。"
+  },
+  "plugins": [
+    {
+      "name": "dsh-screenshot",
+      "title": {
+        "en": "Screenshot Input",
+        "ru": "Скриншоты как ввод",
+        "zh": "截图输入"
+      },
+      "description": {
+        "en": "Composer screenshot button, click-to-edit attachment rail with a pen/arrow/rectangle/text annotation editor, screen and clipboard capture tools, and a reading protocol for annotated screenshots.",
+        "ru": "Кнопка скриншота в поле ввода, редактор разметки во вложениях (кисть, стрелка, рамка, текст), инструменты захвата экрана и буфера, протокол чтения размеченных скриншотов.",
+        "zh": "输入框截图按钮、带画笔/箭头/矩形/文字标注的附件编辑器、屏幕与剪贴板抓取工具，以及标注截图的阅读协议。"
+      },
+      "icon": "icons/dsh-screenshot.svg",
+      "author": "Maxim Fedorov (MaximFedorovtoo)",
+      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-screenshot",
+      "repository": {
+        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+        "directory": "plugins/dsh-screenshot"
+      },
+      "versions": [
+        {
+          "version": "1.4.0",
+          "publishTimestamp": 1793182492,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+            "commit": "7124a7b264e09c202838eb3c0125b5902aec95aa",
+            "path": "/plugins/dsh-screenshot"
+          },
+          "engines": {
+            "dsh": ">=0.2.0 <0.3.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-api-spend",
+      "title": {
+        "en": "API Spend",
+        "ru": "Расходы на API",
+        "zh": "API 花费"
+      },
+      "description": {
+        "en": "Shows each project API spend at the provider official rates next to the token counters, with a per-project breakdown and the platform totals.",
+        "ru": "Показывает расходы на API по каждому проекту по официальным тарифам рядом со счётчиками токенов: разбивка по проектам и итоги платформы.",
+        "zh": "在令牌计数旁按官方价格显示每个项目的 API 花费，并提供项目明细与平台总计。"
+      },
+      "icon": "icons/dsh-api-spend.svg",
+      "author": "Maxim Fedorov (MaximFedorovtoo)",
+      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-api-spend",
+      "repository": {
+        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+        "directory": "plugins/dsh-api-spend"
+      },
+      "versions": [
+        {
+          "version": "1.1.0",
+          "publishTimestamp": 1793182492,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+            "commit": "7124a7b264e09c202838eb3c0125b5902aec95aa",
+            "path": "/plugins/dsh-api-spend"
+          },
+          "engines": {
+            "dsh": ">=0.2.0 <0.3.0"
+          }
+        }
+      ]
+    }
+  ]
+}
