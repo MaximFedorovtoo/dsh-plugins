@@ -1,0 +1,12 @@
+# Instructions panel bundle.
+#
+# The Host half reads and writes the machine-wide instruction file
+# <DSH_HOME>/AGENTS.md through /api/instructions.
+- insert:
+    - id: instructions
+      name: dsh-instructions
+      config:
+        # '' = <DSH_HOME>/AGENTS.md. A relative path resolves inside DSH_HOME.
+        target: ''
+        # Byte ceiling for the uploaded file.
+        maxBytes: 65536

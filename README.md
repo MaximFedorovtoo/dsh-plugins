@@ -1,6 +1,6 @@
 # Плагины для DeepSeek Harness: расходы, скриншоты, локализация, Codex и инструкции
 
-Пять плагинов для [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
+Шесть плагинов для [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 
 | Плагин | Что делает | Где работает |
 |---|---|---|
@@ -9,6 +9,7 @@
 | [`dsh-locale-ru`](plugins/dsh-locale-ru) | Полная русская локализация веб-клиента: 64 неймспейса, 2910 строк интерфейса и 545 названий/описаний плагинов. | Windows, macOS, Linux |
 | [`dsh-codex-bridge`](plugins/dsh-codex-bridge) | Переносит проекты и переписку из OpenAI Codex в DSH: проект остаётся в своей папке, чат продолжается в DSH. | Windows, macOS, Linux |
 | [`dsh-agents-md`](plugins/dsh-agents-md) | Кладёт глобальные инструкции `AGENTS.md` в `DSH_HOME`, чтобы они подгружались в каждую сессию любого проекта. Существующий файл не перезаписывается без явного `overwrite`. | Windows, macOS, Linux |
+| [`dsh-instructions`](plugins/dsh-instructions) | Панель «Инструкции»: загрузить файл, отредактировать и сохранить как `DSH_HOME/AGENTS.md` — правила действуют по умолчанию во всех сессиях. | Windows, macOS, Linux |
 
 Все плагины — чистый JavaScript без зависимостей и без этапа сборки. Устанавливаются одинаково на всех ОС; ограничение по платформам касается только захвата экрана в `dsh-screenshot` (см. [совместимость](#совместимость-по-платформам)).
 
@@ -123,7 +124,8 @@ dsh-plugins/
 │   ├── dsh-api-spend/      # пакет dsh-api-spend
 │   ├── dsh-locale-ru/      # пакет dsh-locale-ru (русская локализация)
 │   ├── dsh-codex-bridge/   # пакет dsh-codex-bridge (перенос из Codex)
-│   └── dsh-agents-md/      # пакет dsh-agents-md (глобальные инструкции AGENTS.md)
+│   ├── dsh-agents-md/      # пакет dsh-agents-md (глобальные инструкции AGENTS.md)
+│   └── dsh-instructions/   # пакет dsh-instructions (панель загрузки инструкций)
 ├── icons/                  # иконки для индекса Discover
 ├── index.json              # индекс для вкладки Discover
 ├── INSTALL.md              # инструкция по установке (рус.)

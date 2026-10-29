@@ -1,6 +1,6 @@
 # DeepSeek Harness plugins: spend, screenshots, localization, Codex and instructions
 
-Five plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
+Six plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 
 | Plugin | What it does | Runs on |
 |---|---|---|
@@ -9,6 +9,7 @@ Five plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 | [`dsh-locale-ru`](plugins/dsh-locale-ru) | Full Russian localization of the web client: 64 namespaces, 2910 interface strings and 545 plugin titles/descriptions. | Windows, macOS, Linux |
 | [`dsh-codex-bridge`](plugins/dsh-codex-bridge) | Imports projects and chat history from the OpenAI Codex app into DSH: the project stays in its own folder and the chat continues in DSH. | Windows, macOS, Linux |
 | [`dsh-agents-md`](plugins/dsh-agents-md) | Installs global `AGENTS.md` instructions into `DSH_HOME` so every session in every project loads them; an existing file is kept unless `overwrite` is enabled. | Windows, macOS, Linux |
+| [`dsh-instructions`](plugins/dsh-instructions) | An Instructions panel: upload a file, edit it and save it as `DSH_HOME/AGENTS.md` so the rules apply by default in every session. | Windows, macOS, Linux |
 
 All plugins are plain JavaScript with no dependencies and no build step. Installation is identical on every OS; the only platform limitation is screen capture in `dsh-screenshot` (see [platform support](#platform-support)).
 
@@ -118,7 +119,8 @@ dsh-plugins/
 │   ├── dsh-api-spend/      # package dsh-api-spend
 │   ├── dsh-locale-ru/      # package dsh-locale-ru (Russian localization)
 │   ├── dsh-codex-bridge/   # package dsh-codex-bridge (Codex import)
-│   └── dsh-agents-md/      # package dsh-agents-md (global AGENTS.md instructions)
+│   ├── dsh-agents-md/      # package dsh-agents-md (global AGENTS.md instructions)
+│   └── dsh-instructions/   # package dsh-instructions (instruction upload panel)
 ├── icons/                  # icons for the Discover index
 ├── index.json              # plugin index for the Discover tab
 ├── INSTALL.md              # installation guide (Russian)
