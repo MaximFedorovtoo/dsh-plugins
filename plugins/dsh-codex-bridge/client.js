@@ -35,7 +35,9 @@ window.__ModuleLoader__.load({
       'project.threads': 'Тредов: {count}',
       'project.missing': 'Папка проекта не найдена',
       'project.import': 'Импортировать проект',
-      'project.update': 'Обновить проект',
+      'project.importAll': 'Все чаты',
+      'page.importAll': 'Импортировать всё',
+      'import.allHint': 'Импортирую все проекты и все их чаты. Это может занять время.',      'project.update': 'Обновить проект',
       'project.imported': 'Уже импортирован',
       'project.showThreads': 'Треды ({count})',
       'project.hideThreads': 'Скрыть треды ({count})',
@@ -59,7 +61,11 @@ window.__ModuleLoader__.load({
       'result.sessionLabel': 'Сессия',
       'result.messagesLabel': 'Сообщений',
       'result.filesLabel': 'Файлов',
-      'result.open': 'Открыть чат',
+      'result.bulkTitle': 'Массовый импорт завершён',
+      'result.projectsLabel': 'Проектов',
+      'result.threadsLabel': 'Чатов',
+      'result.createdLabel': 'Новых чатов',
+      'result.errorsLabel': 'Ошибок',      'result.open': 'Открыть чат',
       'result.openHint': 'Чат не открылся. Обновите список сессий в боковой панели и попробуйте снова.',
       'result.dismiss': 'Закрыть',
     };
@@ -83,7 +89,9 @@ window.__ModuleLoader__.load({
       'project.threads': 'Threads: {count}',
       'project.missing': 'Project folder not found',
       'project.import': 'Import project',
-      'project.update': 'Update project',
+      'project.importAll': 'All chats',
+      'page.importAll': 'Import everything',
+      'import.allHint': 'Importing every project and all of its chats. This can take a while.',      'project.update': 'Update project',
       'project.imported': 'Already imported',
       'project.showThreads': 'Threads ({count})',
       'project.hideThreads': 'Hide threads ({count})',
@@ -107,7 +115,11 @@ window.__ModuleLoader__.load({
       'result.sessionLabel': 'Session',
       'result.messagesLabel': 'Messages',
       'result.filesLabel': 'Files',
-      'result.open': 'Open chat',
+      'result.bulkTitle': 'Bulk import complete',
+      'result.projectsLabel': 'Projects',
+      'result.threadsLabel': 'Chats',
+      'result.createdLabel': 'New chats',
+      'result.errorsLabel': 'Errors',      'result.open': 'Open chat',
       'result.openHint': 'The chat did not open. Refresh the session list in the sidebar and try again.',
       'result.dismiss': 'Dismiss',
     };
@@ -528,6 +540,7 @@ window.__ModuleLoader__.load({
           : [];
         const name = textOf(project.name) !== '' ? project.name : t('project.unknown');
         const running = pendingKey === 'project:' + textOf(project.id);
+        const runningAll = pendingKey === 'project:' + textOf(project.id) + ':all';
         const imported = project.imported === true;
         return h(
           'div',
@@ -567,6 +580,17 @@ window.__ModuleLoader__.load({
                 : h(
                     Button,
                     {
+                      variant: 'outline',
+                      disabled: pendingKey !== '',
+                      onClick: () => onImportProject(project, { allThreads: true }),
+                    },
+                    runningAll ? t('import.running') : t('project.importAll')
+                  ),
+              threads.length === 0
+                ? null
+                : h(
+                    Button,
+                    {
                       variant: 'ghost',
                       onClick: () => setExpanded((value) => !value),
                     },
@@ -596,6 +620,46 @@ window.__ModuleLoader__.load({
       }
 
       function ResultCard({ result, openError, onOpen, onDismiss }) {
+        if (result.bulk === true) {
+          const totals = isRecord(result.totals) ? result.totals : {};
+          const firstSessionId = textOf(result.firstSessionId);
+          function totalRow(label, value) {
+            return h(
+              'div',
+              { style: S.resultRow },
+              h('span', { style: S.resultKey }, label),
+              h('span', { style: S.resultValue }, String(countOf(value)))
+            );
+          }
+          return h(
+            'div',
+            { style: S.result, 'aria-live': 'polite' },
+            h(
+              'div',
+              { style: S.resultHead },
+              h('span', { style: S.resultIcon }, h(CheckGlyph)),
+              h('span', { style: S.resultTitle }, t('result.bulkTitle'))
+            ),
+            h(
+              'div',
+              { style: S.resultGrid },
+              totalRow(t('result.projectsLabel'), totals.projects ?? totals.projectsOk),
+              totalRow(t('result.threadsLabel'), totals.threads),
+              totalRow(t('result.createdLabel'), totals.created),
+              totalRow(t('result.appendedLabel'), totals.appended),
+              totalRow(t('result.errorsLabel'), totals.errors)
+            ),
+            textOf(result.error) === '' ? null : h('div', { style: S.inlineError }, textOf(result.error)),
+            textOf(openError) === '' ? null : h('div', { style: S.inlineError }, openError),
+            textOf(openError) === '' ? null : h('div', { style: S.hint }, t('result.openHint')),
+            h(
+              'div',
+              { style: S.actions },
+              firstSessionId === '' ? null : h(Button, { variant: 'primary', onClick: () => onOpen(firstSessionId) }, t('result.open')),
+              h(Button, { variant: 'ghost', onClick: onDismiss }, t('result.dismiss'))
+            )
+          );
+        }
         const sessionId = textOf(result.sessionId);
         const sessionTitle = textOf(result.sessionTitle);
         function resultRow(label, value, mono) {
@@ -683,14 +747,26 @@ window.__ModuleLoader__.load({
           };
         }, []);
 
-        function runImport(project, thread) {
+        function runImport(project, thread, options) {
           if (pendingKey !== '') return;
-          const key = thread === null ? 'project:' + textOf(project.id) : 'thread:' + textOf(thread.id);
+          const allThreads = options !== undefined && options.allThreads === true;
+          const allProjects = options !== undefined && options.allProjects === true;
+          const key = allProjects
+            ? 'all'
+            : thread === null
+              ? allThreads
+                ? 'project:' + textOf(project.id) + ':all'
+                : 'project:' + textOf(project.id)
+              : 'thread:' + textOf(thread.id);
           setPendingKey(key);
           setImportError('');
           setOpenError('');
           setResult(null);
-          const body = thread === null ? { projectId: project.id } : { projectId: project.id, threadId: thread.id };
+          const body = allProjects
+            ? { allProjects: true }
+            : thread === null
+              ? { projectId: project.id, ...(allThreads ? { allThreads: true } : {}) }
+              : { projectId: project.id, threadId: thread.id };
           requestJson(IMPORT_URL, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
@@ -760,7 +836,20 @@ window.__ModuleLoader__.load({
                   h('h1', { style: S.h1 }, t('page.title')),
                   h('p', { style: S.subtitle }, t('page.subtitle'))
                 ),
-                h(Button, { variant: 'outline', disabled: refreshDisabled, onClick: () => readCatalog(true) }, refreshLabel)
+                h(
+                  'div',
+                  { style: S.actions },
+                  h(Button, { variant: 'outline', disabled: refreshDisabled, onClick: () => readCatalog(true) }, refreshLabel),
+                  h(
+                    Button,
+                    {
+                      variant: 'primary',
+                      disabled: busy || projects.length === 0,
+                      onClick: () => runImport(null, null, { allProjects: true }),
+                    },
+                    t('page.importAll')
+                  )
+                )
               ),
               catalog === null
                 ? null
@@ -770,7 +859,12 @@ window.__ModuleLoader__.load({
                     catalogRow(t('source.codex'), textOf(catalog.codexHome)),
                     catalogRow(t('source.target'), textOf(catalog.targetRoot))
                   ),
-              busy ? h(ProgressBanner, { title: t('import.progressTitle'), hint: t('import.progressHint') }) : null,
+              busy
+                ? h(ProgressBanner, {
+                    title: t('import.progressTitle'),
+                    hint: pendingKey === 'all' ? t('import.allHint') : t('import.progressHint'),
+                  })
+                : null,
               textOf(importError) === '' ? null : h(ErrorBanner, { title: t('error.title'), text: importError }),
               result === null
                 ? null
@@ -805,7 +899,7 @@ window.__ModuleLoader__.load({
                   key: textOf(project.id) !== '' ? project.id : 'project-' + index,
                   project: project,
                   pendingKey: pendingKey,
-                  onImportProject: (selected) => runImport(selected, null),
+                  onImportProject: (selected, options) => runImport(selected, null, options),
                   onImportThread: (selected, thread) => runImport(selected, thread),
                 })
               )

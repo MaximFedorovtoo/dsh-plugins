@@ -1,7 +1,9 @@
 # dsh-codex-bridge — контракт между частями плагина
 
-Плагин переносит проект из OpenAI Codex (папка `~/.codex`) в рабочую область DeepSeek Harness:
-копирует файлы проекта (включая `.git`) и создаёт чат-сессию DSH с перепиской из Codex.
+Плагин переносит проект из OpenAI Codex (папка `~/.codex`) в рабочую область DeepSeek Harness.
+По умолчанию (`importMode: in-place`) рабочая область указывает на исходную папку проекта и файлы
+не копируются; в режиме `copy` проект копируется в `targetRoot` вместе с `.git`. Для каждого треда
+создаётся чат-сессия DSH с перепиской из Codex.
 
 Раскладка пакета:
 
@@ -14,8 +16,8 @@ dsh-codex-bridge/
   locale/ru.json        # meta.title / meta.description (RU)
   index.js              # Host: apply(ctx, config) — инструмент, HTTP, импорт
   client.js             # Client: панель в Web UI
-  src/codex-source.js   # чтение ~/.codex: проекты, треды, транскрипт  (пишет teammate A)
-  src/session-import.js # запись чат-сессии DSH через ctx.sessionPersistence (пишет teammate B)
+  src/codex-source.js   # чтение ~/.codex: проекты, треды, транскрипт
+  src/session-import.js # запись чат-сессии DSH через ctx.sessionPersistence
 ```
 
 ## Host HTTP API (под `ctx.connection.fetch.register`, префикс `/api`)
@@ -61,13 +63,25 @@ dsh-codex-bridge/
 
 ### `POST /api/codex-import/import`
 
-Тело:
+Тело (один тред):
 
 ```json
 { "projectId": "4e3573dd-...", "threadId": "01a0f78d-..." }
 ```
 
 `threadId` может отсутствовать/быть `null` — тогда берётся последний тред проекта.
+
+Все чаты одного проекта:
+
+```json
+{ "projectId": "4e3573dd-...", "allThreads": true }
+```
+
+Все проекты и все их чаты:
+
+```json
+{ "allProjects": true }
+```
 
 Импорт **идемпотентен по проекту**: повторный вызов для того же проекта обновляет уже
 склонированный каталог (файлы перезаписываются новыми версиями) и дописывает в ту же
@@ -99,21 +113,45 @@ dsh-codex-bridge/
 - `appended` — сколько событий дописано в существующую сессию (0, если новых реплик нет);
 - `attached` — чат прикреплён к рабочей области; иначе причина в `warning`.
 
+Ответ массового импорта (`allThreads` или `allProjects`):
+
+```json
+{
+  "ok": true,
+  "bulk": true,
+  "projectId": "4e3573dd-...",
+  "projectName": "сервер",
+  "targetDir": "D:\\projects\\сервер",
+  "importMode": "in-place",
+  "firstSessionId": "session-...",
+  "threads": [
+    { "threadId": "01a0f78d-...", "sessionId": "session-...", "sessionCreated": true, "appended": 0, "messages": 70 }
+  ],
+  "totals": { "threads": 7, "created": 5, "updated": 2, "appended": 40, "messages": 320, "errors": 0 }
+}
+```
+
+Для `allProjects` добавляется `"scope": "all"` и массив `projects` с такими же ответами по проектам,
+а `totals` дополняется `projects` и `projectsOk`. Ошибки отдельных тредов не прерывают импорт:
+они перечислены в `threads[].error`, а счётчик — в `totals.errors`.
+
 Ошибка: статус 400/500, `{ "ok": false, "error": "текст" }`.
 
 ## Инструмент модели `codex_import`
 
 ```
 {
-  action: 'catalog' | 'import',
+  action: 'catalog' | 'import' | 'import-all',
   project?: string,   // имя проекта или его id
   thread?: string,    // id треда или подстрока заголовка (опционально)
+  allThreads?: boolean, // true — все чаты выбранного проекта
   targetName?: string // имя папки в targetRoot (опционально)
 }
 ```
 
 `catalog` → JSON-каталог (как `projects` выше, кратко).
-`import` → результат импорта (как ответ POST).
+`import` → результат импорта (как ответ POST); с `allThreads: true` — сводка по всем чатам проекта.
+`import-all` → сводка по всем проектам и всем их чатам.
 
 ## Клиентская панель (client.js)
 
@@ -151,6 +189,6 @@ export async function createImportedSession(ctx, { cwd, title, messages, source 
 
 ### index.js (Lead)
 
-- Config: `codexHome` ('' = автопоиск), `targetRoot`, `maxTranscriptChars`.
+- Config: `importMode` (`in-place` | `copy`), `codexHome` ('' = автопоиск), `targetRoot`, `maxTranscriptChars`, `excludeNames`.
 - `apply(ctx, config)`: инструмент `codex_import`, два fetch-маршрута, сервис импорта
-  (копирование файлов → `ctx.workspaceRegistry.create(path)` → `createImportedSession`).
+  (`resolveProjectTarget` → на каждый выбранный тред `importThread`: чтение транскрипта → создание/дописывание сессии → манифест).

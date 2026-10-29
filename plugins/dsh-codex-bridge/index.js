@@ -339,32 +339,18 @@ async function sessionExists(ctx, sessionId) {
 }
 
 /**
- * Import or update one Codex project (optionally one thread) in DSH.
- * @param {import('@deepseek-ai/cordis').Context} ctx - plugin Context.
+ * Resolve where a project import writes: the folder, the workspace, whether the
+ * import is an update, and the manifest shared by every thread of the project.
+ * @param {object} ctx - plugin Context.
  * @param {ReturnType<typeof resolveConfig>} cfg - resolved plugin config.
- * @param {{ projectId?: string, threadId?: string | null, targetName?: string }} request - import selection.
- * @returns {Promise<object>} import result JSON.
+ * @param {object} project - catalog project record.
+ * @param {{ targetName?: string }} request - import selection.
+ * @returns {Promise<{ sourceDir: string, targetDir: string, updating: boolean, workspace: any, workspaceId: string, copiedFiles: number, manifest: Record<string, any> }>}
  */
-async function importProject(ctx, cfg, request) {
-  const catalog = await buildCatalog(cfg);
-  const project =
-    catalog.projects.find((candidate) => candidate.id === request.projectId) ??
-    catalog.projects.find((candidate) => candidate.name === request.projectId);
-  if (!project) throw new Error(`project not found in Codex: ${String(request.projectId)}`);
-  if (project.exists === false) throw new Error(`project directory is missing: ${project.rootPaths.join(', ')}`);
-
-  /** @type {(typeof project.threads)[number] | undefined} */
-  let thread;
-  if (request.threadId) {
-    thread = project.threads.find(
-      (candidate) => candidate.id === request.threadId || candidate.title.includes(request.threadId),
-    );
-    if (!thread) throw new Error(`thread not found in project "${project.name}": ${request.threadId}`);
-  } else {
-    thread = project.threads[0];
-  }
-
-  const sourceDir = thread?.cwd && thread.cwd.length > 0 ? thread.cwd : project.rootPaths[0];
+async function resolveProjectTarget(ctx, cfg, project, request) {
+  const sourceDir =
+    (Array.isArray(project.rootPaths) ? project.rootPaths[0] : undefined) ??
+    (Array.isArray(project.threads) ? project.threads[0]?.cwd : undefined);
   if (!sourceDir) throw new Error(`project "${project.name}" has no source directory`);
 
   const found = await findImportedProject(cfg.targetRoot, project.id);
@@ -372,8 +358,7 @@ async function importProject(ctx, cfg, request) {
   // folder becomes the DSH workspace and no copy appears next to it. The
   // manifest then lives inside the project directory, so it is read from there.
   const sourceManifest = cfg.importMode === 'in-place' ? await readManifest(sourceDir) : undefined;
-  const existing =
-    sourceManifest !== undefined ? { dir: sourceDir, manifest: sourceManifest } : found;
+  const existing = sourceManifest !== undefined ? { dir: sourceDir, manifest: sourceManifest } : found;
   const updating = existing !== undefined;
   const base = safeSegment(request.targetName || project.name, safeSegment(project.id, 'codex-project'));
   /** @type {string} */
@@ -393,11 +378,46 @@ async function importProject(ctx, cfg, request) {
       ? await copyProject(sourceDir, targetDir, new Set(cfg.excludeNames), updating || adopted)
       : 0;
 
-  // Register (or reuse) a DSH workspace so the cloned project joins the sidebar.
+  // Register (or reuse) a DSH workspace so the project joins the sidebar.
   const existingWorkspace = await ctx.workspaceRegistry.resolveByPath(targetDir);
   const workspace = existingWorkspace ?? (await ctx.workspaceRegistry.create(targetDir, project.name));
   const workspaceId = String(workspace.id ?? workspace.path ?? targetDir);
+  const manifest =
+    existing?.manifest ??
+    { plugin: MANIFEST_PLUGIN, version: 1, projectId: project.id, projectName: project.name, sessions: {} };
+  if (manifest.sessions === null || typeof manifest.sessions !== 'object') manifest.sessions = {};
+  return { sourceDir, targetDir, updating, workspace, workspaceId, copiedFiles, manifest };
+}
 
+/**
+ * Pick the threads an import request covers.
+ * @param {object} project - catalog project record.
+ * @param {{ threadId?: string | null, allThreads?: boolean }} request - import selection.
+ * @returns {Array<object | undefined>} threads; `[undefined]` for a project without threads.
+ */
+function threadsToImport(project, request) {
+  const threads = Array.isArray(project.threads) ? project.threads : [];
+  if (typeof request.threadId === 'string' && request.threadId !== '') {
+    const thread = threads.find(
+      (candidate) => candidate.id === request.threadId || candidate.title.includes(request.threadId),
+    );
+    if (!thread) throw new Error(`thread not found in project "${project.name}": ${request.threadId}`);
+    return [thread];
+  }
+  if (request.allThreads === true) return threads.length > 0 ? threads : [undefined];
+  return threads.length > 0 ? [threads[0]] : [undefined];
+}
+
+/**
+ * Import or update the chat of one thread inside a resolved project target.
+ * @param {object} ctx - plugin Context.
+ * @param {ReturnType<typeof resolveConfig>} cfg - resolved plugin config.
+ * @param {object} project - catalog project record.
+ * @param {Awaited<ReturnType<typeof resolveProjectTarget>>} target - resolved destination.
+ * @param {object | undefined} thread - Codex thread, undefined for a project without threads.
+ * @returns {Promise<object>} per-thread result.
+ */
+async function importThread(ctx, cfg, project, target, thread) {
   /** @type {Array<{role: 'user' | 'assistant', text: string, time?: number}>} */
   let messages = [];
   let transcriptTitle = thread?.title ?? '';
@@ -417,10 +437,7 @@ async function importProject(ctx, cfg, request) {
   }
 
   const title = transcriptTitle ? `Codex · ${project.name} · ${transcriptTitle}` : `Codex · ${project.name}`;
-  const manifest =
-    existing?.manifest ??
-    { plugin: MANIFEST_PLUGIN, version: 1, projectId: project.id, projectName: project.name, sessions: {} };
-  if (manifest.sessions === null || typeof manifest.sessions !== 'object') manifest.sessions = {};
+  const manifest = target.manifest;
   const threadKey = thread?.id ?? null;
   const previous = threadKey !== null ? manifest.sessions[threadKey] : undefined;
 
@@ -460,7 +477,7 @@ async function importProject(ctx, cfg, request) {
     if (typeof previous?.title === 'string' && previous.title.length > 0) storedTitle = previous.title;
   } else if (bounded.length > 0) {
     const created = await createImportedSession(ctx, {
-      cwd: targetDir,
+      cwd: target.targetDir,
       title,
       messages: bounded,
       source: {
@@ -481,9 +498,9 @@ async function importProject(ctx, cfg, request) {
 
   // Workspace membership is authoritative for the sidebar: a persisted session
   // whose id is not accounted to a workspace appears under "Ungrouped".
-  if (sessionId !== null && typeof workspace.attachSession === 'function') {
+  if (sessionId !== null && typeof target.workspace.attachSession === 'function') {
     try {
-      await workspace.attachSession(sessionId);
+      await target.workspace.attachSession(sessionId);
     } catch (error) {
       attachWarning = error instanceof Error ? error.message : String(error);
     }
@@ -500,35 +517,151 @@ async function importProject(ctx, cfg, request) {
     };
   }
   manifest.projectName = project.name;
-  manifest.workspaceId = workspaceId;
-  manifest.targetDir = targetDir;
+  manifest.workspaceId = target.workspaceId;
+  manifest.targetDir = target.targetDir;
   manifest.codexHome = cfg.codexHome;
   manifest.importedAt = new Date().toISOString();
-  await writeManifest(targetDir, manifest);
+  await writeManifest(target.targetDir, manifest);
 
   const warnings = [appendWarning, attachWarning].filter((value) => typeof value === 'string' && value.length > 0);
   return {
-    ok: true,
-    updated: updating,
-    projectId: project.id,
-    projectName: project.name,
     threadId: threadKey,
     threadTitle: transcriptTitle || null,
-    targetDir,
-    workspaceId,
     sessionId,
     sessionTitle: sessionId ? storedTitle : null,
     sessionCreated,
     appended,
     messages: messages.length,
-    copiedFiles,
-    importMode: cfg.importMode,
     eventCount,
+    updated: target.updating,
     attached: attachWarning === null && sessionId !== null,
     ...(warnings.length > 0 ? { warning: warnings.join('; ') } : {}),
   };
 }
 
+/**
+ * Import or update one Codex project: the selected thread, or every thread when
+ * the request sets `allThreads`.
+ * @param {object} ctx - plugin Context.
+ * @param {ReturnType<typeof resolveConfig>} cfg - resolved plugin config.
+ * @param {{ projectId?: string, threadId?: string | null, targetName?: string, allThreads?: boolean }} request - import selection.
+ * @returns {Promise<object>} import result JSON (single thread or a bulk summary).
+ */
+async function importProject(ctx, cfg, request) {
+  const catalog = await buildCatalog(cfg);
+  const project =
+    catalog.projects.find((candidate) => candidate.id === request.projectId) ??
+    catalog.projects.find((candidate) => candidate.name === request.projectId);
+  if (!project) throw new Error(`project not found in Codex: ${String(request.projectId)}`);
+  if (project.exists === false) throw new Error(`project directory is missing: ${project.rootPaths.join(', ')}`);
+
+  const target = await resolveProjectTarget(ctx, cfg, project, request);
+  const threads = threadsToImport(project, request);
+  const results = [];
+  for (const thread of threads) {
+    try {
+      results.push(await importThread(ctx, cfg, project, target, thread));
+    } catch (error) {
+      const entry = {
+        threadId: thread?.id ?? null,
+        threadTitle: thread?.title ?? null,
+        sessionId: null,
+        sessionTitle: null,
+        sessionCreated: false,
+        appended: 0,
+        messages: 0,
+        error: error instanceof Error ? error.message : String(error),
+      };
+      results.push(entry);
+      if (request.allThreads !== true) throw error;
+    }
+  }
+
+  const first = results.find((entry) => entry.error === undefined) ?? results[0];
+  const base = {
+    projectId: project.id,
+    projectName: project.name,
+    targetDir: target.targetDir,
+    workspaceId: target.workspaceId,
+    importMode: cfg.importMode,
+    copiedFiles: target.copiedFiles,
+    updated: target.updating,
+  };
+  if (request.allThreads !== true) {
+    return { ok: true, ...base, ...first };
+  }
+  const failed = results.filter((entry) => entry.error !== undefined);
+  if (failed.length === results.length) {
+    return {
+      ok: false,
+      bulk: true,
+      ...base,
+      error: failed.map((entry) => `${entry.threadTitle ?? entry.threadId}: ${entry.error}`).join('; '),
+    };
+  }
+  const created = results.filter((entry) => entry.sessionCreated === true).length;
+  return {
+    ok: failed.length === 0,
+    bulk: true,
+    ...base,
+    firstSessionId: first.sessionId ?? null,
+    firstSessionTitle: first.sessionTitle ?? null,
+    threads: results,
+    totals: {
+      threads: results.length,
+      created,
+      updated: results.length - created - failed.length,
+      appended: results.reduce((sum, entry) => sum + (entry.appended ?? 0), 0),
+      messages: results.reduce((sum, entry) => sum + (entry.messages ?? 0), 0),
+      errors: failed.length,
+    },
+  };
+}
+
+/**
+ * Import every Codex project with all of its threads.
+ * @param {object} ctx - plugin Context.
+ * @param {ReturnType<typeof resolveConfig>} cfg - resolved plugin config.
+ * @returns {Promise<object>} bulk summary across projects.
+ */
+async function importAllProjects(ctx, cfg) {
+  const catalog = await buildCatalog(cfg);
+  const projects = catalog.projects.filter((project) => project.exists !== false);
+  const results = [];
+  for (const project of projects) {
+    try {
+      results.push(await importProject(ctx, cfg, { projectId: project.id, allThreads: true }));
+    } catch (error) {
+      results.push({
+        ok: false,
+        projectId: project.id,
+        projectName: project.name,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  const failed = results.filter((entry) => entry.ok === false);
+  const done = results.filter((entry) => entry.ok !== false);
+  const totals = done.reduce(
+    (sum, entry) => ({
+      threads: sum.threads + (entry.totals?.threads ?? 0),
+      created: sum.created + (entry.totals?.created ?? 0),
+      updated: sum.updated + (entry.totals?.updated ?? 0),
+      appended: sum.appended + (entry.totals?.appended ?? 0),
+      messages: sum.messages + (entry.totals?.messages ?? 0),
+      errors: sum.errors + (entry.totals?.errors ?? 0),
+    }),
+    { threads: 0, created: 0, updated: 0, appended: 0, messages: 0, errors: 0 },
+  );
+  return {
+    ok: failed.length === 0,
+    bulk: true,
+    scope: 'all',
+    projects: results,
+    firstSessionId: done.map((entry) => entry.firstSessionId).find((id) => typeof id === 'string' && id !== '') ?? null,
+    totals: { projects: results.length, projectsOk: done.length, ...totals, errors: totals.errors + failed.length },
+  };
+}
 /**
  * Register the plugin: the model-facing tool plus the two panel routes.
  * @param {import('@deepseek-ai/cordis').Context} ctx - owning plugin Context.
@@ -552,8 +685,10 @@ export function apply(ctx, config) {
         properties: {
           action: {
             type: 'string',
-            enum: ['catalog', 'import'],
-            description: 'catalog lists Codex projects/threads; import clones or updates one project and its chat.',
+            enum: ['catalog', 'import', 'import-all'],
+            description:
+              'catalog lists Codex projects/threads; import brings one project (one thread, or every thread with ' +
+              'allThreads) into DSH; import-all brings every project with all of its chats.',
           },
           project: {
             type: 'string',
@@ -562,6 +697,10 @@ export function apply(ctx, config) {
           thread: {
             type: 'string',
             description: 'Thread id or a substring of its title; omitted means the most recent thread of the project.',
+          },
+          allThreads: {
+            type: 'boolean',
+            description: 'Import every chat of the selected project instead of one thread.',
           },
           targetName: {
             type: 'string',
@@ -580,11 +719,15 @@ export function apply(ctx, config) {
         if (args.action === 'catalog') {
           return JSON.stringify(await buildCatalog(cfg), null, 2);
         }
-        const result = await importProject(ctx, cfg, {
-          projectId: args.project,
-          threadId: args.thread ?? null,
-          targetName: args.targetName,
-        });
+        const result =
+          args.action === 'import-all'
+            ? await importAllProjects(ctx, cfg)
+            : await importProject(ctx, cfg, {
+                projectId: args.project,
+                threadId: args.thread ?? null,
+                targetName: args.targetName,
+                allThreads: args.allThreads === true,
+              });
         return JSON.stringify(result, null, 2);
       },
     }),
@@ -613,13 +756,20 @@ export function apply(ctx, config) {
       fetch: async (request) => {
         try {
           const body = await request.json();
-          if (!body || typeof body !== 'object' || typeof body.projectId !== 'string' || body.projectId.length === 0) {
+          if (!body || typeof body !== 'object') {
+            return Response.json({ ok: false, error: 'request body must be a JSON object' }, { status: 400 });
+          }
+          if (body.allProjects === true) {
+            return Response.json(await importAllProjects(ctx, cfg));
+          }
+          if (typeof body.projectId !== 'string' || body.projectId.length === 0) {
             return Response.json({ ok: false, error: 'projectId is required' }, { status: 400 });
           }
           const result = await importProject(ctx, cfg, {
             projectId: body.projectId,
             threadId: typeof body.threadId === 'string' && body.threadId.length > 0 ? body.threadId : null,
             targetName: typeof body.targetName === 'string' && body.targetName.length > 0 ? body.targetName : undefined,
+            allThreads: body.allThreads === true,
           });
           return Response.json(result);
         } catch (error) {
@@ -633,4 +783,4 @@ export function apply(ctx, config) {
 }
 
 /** Pure helpers exported for the repository's self-check. */
-export const __internals = { safeSegment, pickTargetDir, resolveCopyTarget, findImportedProject, readManifest };
+export const __internals = { safeSegment, pickTargetDir, resolveCopyTarget, findImportedProject, readManifest, threadsToImport };

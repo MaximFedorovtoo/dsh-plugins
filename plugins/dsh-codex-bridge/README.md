@@ -13,6 +13,7 @@ The point that differs from copying importers: **by default the project stays in
   - **in-place (default)** — the workspace is registered at the original project path, no files are copied;
   - **copy** — the project is copied into `targetRoot` (default `Documents/deepseek-harness/Codex`) with `.git`, and a later import refreshes **the same** folder.
 - Creates a DSH chat session from the Codex transcript (user/assistant) and attaches it to the workspace.
+- Supports **bulk import**: the project's "All chats" button imports every thread, and "Import everything" imports every project with all of its chats. Each thread gets its own chat; a repeat run appends only new messages.
 - A later import **appends only new messages** to the same chat, without duplicate sessions.
 - Keeps a `.codex-import.json` manifest that marks an imported project. In in-place mode the manifest lives inside the project folder (the only file the plugin creates there); deleting it turns the folder into an ordinary one.
 
@@ -59,6 +60,7 @@ Enabling copy mode:
 ## Import behaviour
 
 - **First in-place import:** the workspace is the original project folder; a chat with the history is created; `.codex-import.json` is written into the folder.
+- **Bulk import:** "All chats" on a project card imports every thread of that project, "Import everything" imports every project. A failing thread does not stop the rest and is reported in the summary.
 - **Later imports:** same folder, same chat; only new Codex messages are appended (`appended` in the response).
 - **First copy import:** `targetRoot/<project name>`; when that folder already exists and is a project copy (has `.git` or a manifest), it is reused and refreshed instead of getting a `-2` suffix. A suffix appears only when the name is taken by a **different** Codex project or by an unrelated non-empty folder.
 - **Switching modes:** an imported project is located through its manifest, so a later import does not create a second copy; changing the mode for one project without removing the manifest is not recommended.
