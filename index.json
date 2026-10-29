@@ -37,7 +37,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "7124a7b264e09c202838eb3c0125b5902aec95aa",
+            "commit": "8a30f3a94ae1c94727fc45d6c96e11f37019846e",
             "path": "/plugins/dsh-api-spend"
           },
           "engines": {
@@ -60,9 +60,10 @@
       },
       "icon": "icons/dsh-codex-bridge.svg",
       "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-codex-bridge",
+      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-codex-bridge",
       "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-codex-bridge"
+        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+        "directory": "plugins/dsh-codex-bridge"
       },
       "versions": [
         {
@@ -70,8 +71,9 @@
           "publishTimestamp": 1793261175,
           "source": {
             "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-codex-bridge",
-            "commit": "4762a7d08c47fe65373152c31f809fe013ddea27"
+            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+            "commit": "8a30f3a94ae1c94727fc45d6c96e11f37019846e",
+            "path": "/plugins/dsh-codex-bridge"
           },
           "engines": {
             "dsh": ">=0.2.0 <0.3.0"
@@ -93,9 +95,10 @@
       },
       "icon": "icons/dsh-locale-ru.svg",
       "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-locale-ru",
+      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-locale-ru",
       "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-locale-ru"
+        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+        "directory": "plugins/dsh-locale-ru"
       },
       "versions": [
         {
@@ -103,8 +106,9 @@
           "publishTimestamp": 1793261175,
           "source": {
             "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-locale-ru",
-            "commit": "fe2c96ceb1951c9ae5857624e19290e6bf027f9b"
+            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+            "commit": "8a30f3a94ae1c94727fc45d6c96e11f37019846e",
+            "path": "/plugins/dsh-locale-ru"
           },
           "engines": {
             "dsh": ">=0.2.0 <0.3.0"
@@ -138,7 +142,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "7124a7b264e09c202838eb3c0125b5902aec95aa",
+            "commit": "8a30f3a94ae1c94727fc45d6c96e11f37019846e",
             "path": "/plugins/dsh-screenshot"
           },
           "engines": {
