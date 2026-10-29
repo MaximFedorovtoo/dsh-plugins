@@ -1,13 +1,15 @@
-# DeepSeek Harness plugins: API spend and screenshots
+# DeepSeek Harness plugins: spend, screenshots, Russian localization and Codex
 
-Two plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
+Four plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 
 | Plugin | What it does | Runs on |
 |---|---|---|
 | [`dsh-api-spend`](plugins/dsh-api-spend) | Shows the API spend of the current project next to the token counters; the pill opens a per-project breakdown for Today / 7 days / All time plus the provider platform's own totals for comparison. | Windows, macOS, Linux |
 | [`dsh-screenshot`](plugins/dsh-screenshot) | A screenshot button in the composer (reads the clipboard image or opens the file picker), an annotation editor on attached images (pen, arrow, rectangle, text), agent tools to look at the screen or the clipboard, and a region zoom tool. | UI on every platform; screen and clipboard capture on Windows only |
+| [`dsh-locale-ru`](https://github.com/MaximFedorovtoo/dsh-locale-ru) | Full Russian localization of the web client: 64 namespaces, 2910 interface strings and 545 plugin titles/descriptions. | Windows, macOS, Linux |
+| [`dsh-codex-bridge`](https://github.com/MaximFedorovtoo/dsh-codex-bridge) | Imports projects and chat history from the OpenAI Codex app into DSH: the project stays in its own folder and the chat continues in DSH. | Windows, macOS, Linux |
 
-Both plugins are plain JavaScript with no dependencies and no build step. Installation is identical on every OS; the only platform limitation is screen capture in `dsh-screenshot` (see [platform support](#platform-support)).
+All plugins are plain JavaScript with no dependencies and no build step. Installation is identical on every OS; the only platform limitation is screen capture in `dsh-screenshot` (see [platform support](#platform-support)).
 
 [Русская версия](README.md) · [Installation guide](INSTALL.en.md)
 

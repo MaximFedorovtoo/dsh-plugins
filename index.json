@@ -12,41 +12,6 @@
   },
   "plugins": [
     {
-      "name": "dsh-screenshot",
-      "title": {
-        "en": "Screenshot Input",
-        "ru": "Скриншоты как ввод",
-        "zh": "截图输入"
-      },
-      "description": {
-        "en": "Composer screenshot button, click-to-edit attachment rail with a pen/arrow/rectangle/text annotation editor, screen and clipboard capture tools, and a reading protocol for annotated screenshots.",
-        "ru": "Кнопка скриншота в поле ввода, редактор разметки во вложениях (кисть, стрелка, рамка, текст), инструменты захвата экрана и буфера, протокол чтения размеченных скриншотов.",
-        "zh": "输入框截图按钮、带画笔/箭头/矩形/文字标注的附件编辑器、屏幕与剪贴板抓取工具，以及标注截图的阅读协议。"
-      },
-      "icon": "icons/dsh-screenshot.svg",
-      "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-screenshot",
-      "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-        "directory": "plugins/dsh-screenshot"
-      },
-      "versions": [
-        {
-          "version": "1.4.0",
-          "publishTimestamp": 1793182492,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "7124a7b264e09c202838eb3c0125b5902aec95aa",
-            "path": "/plugins/dsh-screenshot"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        }
-      ]
-    },
-    {
       "name": "dsh-api-spend",
       "title": {
         "en": "API Spend",
@@ -74,6 +39,107 @@
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
             "commit": "7124a7b264e09c202838eb3c0125b5902aec95aa",
             "path": "/plugins/dsh-api-spend"
+          },
+          "engines": {
+            "dsh": ">=0.2.0 <0.3.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-codex-bridge",
+      "title": {
+        "en": "Codex Bridge",
+        "ru": "Перенос из Codex",
+        "zh": "Codex 迁移"
+      },
+      "description": {
+        "en": "Imports projects and chat history from the OpenAI Codex app into DSH; the project stays in its original folder and repeat imports update the same workspace.",
+        "ru": "Переносит проекты и переписку из OpenAI Codex в DSH: проект остаётся в своей папке, повторный импорт обновляет ту же рабочую область.",
+        "zh": "将 OpenAI Codex 中的项目和聊天记录导入 DSH；项目保留在原文件夹，重复导入会更新同一个工作区。"
+      },
+      "icon": "icons/dsh-codex-bridge.svg",
+      "author": "Maxim Fedorov (MaximFedorovtoo)",
+      "homepage": "https://github.com/MaximFedorovtoo/dsh-codex-bridge",
+      "repository": {
+        "url": "https://github.com/MaximFedorovtoo/dsh-codex-bridge"
+      },
+      "versions": [
+        {
+          "version": "1.1.0",
+          "publishTimestamp": 1793261175,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/MaximFedorovtoo/dsh-codex-bridge",
+            "commit": "4762a7d08c47fe65373152c31f809fe013ddea27"
+          },
+          "engines": {
+            "dsh": ">=0.2.0 <0.3.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-locale-ru",
+      "title": {
+        "en": "Russian Language Pack",
+        "ru": "Русская локализация",
+        "zh": "俄语语言包"
+      },
+      "description": {
+        "en": "Full Russian translation of the DSH web client: 64 namespaces, 2910 interface strings and 545 plugin titles/descriptions, registered through the public ctx.locale API.",
+        "ru": "Полный русский перевод веб-клиента DSH: 64 неймспейса, 2910 строк интерфейса и 545 названий/описаний плагинов через публичный API ctx.locale.",
+        "zh": "DSH Web 客户端的完整俄语翻译：64 个命名空间、2910 条界面字符串和 545 条插件标题/描述。"
+      },
+      "icon": "icons/dsh-locale-ru.svg",
+      "author": "Maxim Fedorov (MaximFedorovtoo)",
+      "homepage": "https://github.com/MaximFedorovtoo/dsh-locale-ru",
+      "repository": {
+        "url": "https://github.com/MaximFedorovtoo/dsh-locale-ru"
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1793261175,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/MaximFedorovtoo/dsh-locale-ru",
+            "commit": "fe2c96ceb1951c9ae5857624e19290e6bf027f9b"
+          },
+          "engines": {
+            "dsh": ">=0.2.0 <0.3.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-screenshot",
+      "title": {
+        "en": "Screenshot Input",
+        "ru": "Скриншоты как ввод",
+        "zh": "截图输入"
+      },
+      "description": {
+        "en": "Composer screenshot button, click-to-edit attachment rail with a pen/arrow/rectangle/text annotation editor, screen and clipboard capture tools, and a reading protocol for annotated screenshots.",
+        "ru": "Кнопка скриншота в поле ввода, редактор разметки во вложениях (кисть, стрелка, рамка, текст), инструменты захвата экрана и буфера, протокол чтения размеченных скриншотов.",
+        "zh": "输入框截图按钮、带画笔/箭头/矩形/文字标注的附件编辑器、屏幕与剪贴板抓取工具，以及标注截图的阅读协议。"
+      },
+      "icon": "icons/dsh-screenshot.svg",
+      "author": "Maxim Fedorov (MaximFedorovtoo)",
+      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-screenshot",
+      "repository": {
+        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+        "directory": "plugins/dsh-screenshot"
+      },
+      "versions": [
+        {
+          "version": "1.4.0",
+          "publishTimestamp": 1793182492,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+            "commit": "7124a7b264e09c202838eb3c0125b5902aec95aa",
+            "path": "/plugins/dsh-screenshot"
           },
           "engines": {
             "dsh": ">=0.2.0 <0.3.0"
