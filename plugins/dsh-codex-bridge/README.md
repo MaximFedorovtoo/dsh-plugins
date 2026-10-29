@@ -45,7 +45,7 @@ The `codex-import` row in the profile's `cordis.patch.yml` (or the same row in t
 | `importMode` | `in-place` | `in-place` keeps the project in its own folder; `copy` clones into `targetRoot` |
 | `codexHome` | `''` → `$CODEX_HOME` or `~/.codex` | Where Codex data lives |
 | `targetRoot` | `Documents/deepseek-harness/Codex` | Where copy mode writes |
-| `maxTranscriptChars` | `1500000` | Transcript budget (the newest messages are kept) |
+| `maxTranscriptChars` | `0` | `0` imports the whole transcript; a positive number keeps only the newest N characters |
 | `excludeNames` | `node_modules`, `.next`, `.nuxt`, `.turbo`, `.cache` | Never copied in copy mode |
 
 Enabling copy mode:

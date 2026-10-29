@@ -583,6 +583,92 @@ async function scanRollout(filePath, options = {}) {
 
 /* ─────────────────────────── readCodexCatalog ──────────────────────────────── */
 
+/** Comparison key for a directory path (case-insensitive on Windows). */
+function normalizePathKey(value) {
+  const text = String(value).replace(/[\\/]+$/u, '');
+  return process.platform === 'win32' ? text.toLowerCase() : text;
+}
+
+/** Whether a path exists, tolerating permission errors. */
+function pathExists(value) {
+  try {
+    return fs.existsSync(value);
+  } catch {
+    return false;
+  }
+}
+
+/** First read sizes tried when only the rollout header is needed. */
+const HEAD_READ_SIZES = [256 * 1024, 1024 * 1024, 4 * 1024 * 1024];
+
+/**
+ * Read only the `session_meta` record of a rollout (id, cwd, timestamp).
+ * Old chats often have no entry in the Codex state file, but the first line of
+ * their rollout still names the project folder; reading a bounded head keeps
+ * the catalogue cheap even for multi-megabyte logs.
+ * @param {string} filePath - rollout path (`.jsonl` or `.jsonl.zst`).
+ * @returns {Promise<{ id: string|null, cwd: string|null, timestamp: string|null } | null>}
+ */
+async function readRolloutHeadMeta(filePath) {
+  let handle;
+  try {
+    handle = await fsp.open(filePath, 'r');
+  } catch {
+    return null;
+  }
+  try {
+    const compressed = /\.zst$/i.test(filePath);
+    for (const size of HEAD_READ_SIZES) {
+      let bytesRead = 0;
+      const buffer = Buffer.alloc(size);
+      try {
+        ({ bytesRead } = await handle.read(buffer, 0, size, 0));
+      } catch {
+        return null;
+      }
+      const chunk = buffer.subarray(0, bytesRead);
+      let text;
+      if (compressed) {
+        try {
+          const frame = await decompressOneZstdFrame(chunk);
+          text = frame.data.toString('utf8');
+        } catch {
+          continue; // the head cut the frame; retry with a larger read
+        }
+      } else {
+        text = chunk.toString('utf8');
+      }
+      for (const line of text.split(/\r?\n/u)) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        let record;
+        try {
+          record = JSON.parse(trimmed);
+        } catch {
+          if (!compressed) break;
+          continue;
+        }
+        if (record && record.type === 'session_meta') {
+          const payload = record.payload && typeof record.payload === 'object' ? record.payload : {};
+          return {
+            id: typeof payload.id === 'string' ? payload.id : null,
+            cwd: typeof payload.cwd === 'string' ? payload.cwd : null,
+            timestamp: toIso(payload.timestamp) || toIso(record.timestamp),
+          };
+        }
+        if (!compressed) break;
+      }
+      if (!compressed) break;
+    }
+    return null;
+  } finally {
+    try {
+      await handle.close();
+    } catch {
+      // closing a read handle never changes the catalogue result
+    }
+  }
+}
 /**
  * Read the project/thread catalogue.
  *
@@ -700,6 +786,80 @@ export async function readCodexCatalog(options = {}) {
       threadCount: threads.length,
       threads,
     });
+  }
+
+  // Old Codex chats can survive only as rollout files: the desktop app may
+  // rewrite its local state, leaving threads with no project assignment and no
+  // session-index entry. Surface them from `session_meta.cwd` instead of hiding
+  // them, otherwise the import silently misses exactly the oldest chats.
+  const assignedThreads = new Set();
+  for (const threadIds of threadsByProject.values()) {
+    for (const threadId of threadIds) assignedThreads.add(threadId.toLowerCase());
+  }
+  const projectByRoot = new Map();
+  for (const record of projects) {
+    for (const root of record.rootPaths) projectByRoot.set(normalizePathKey(root), record);
+  }
+  const synthetic = new Map();
+  for (const [threadId, rollout] of rolloutFiles) {
+    if (assignedThreads.has(threadId.toLowerCase())) continue;
+    const indexEntry = sessionIndex.get(threadId);
+    const meta = await readRolloutHeadMeta(rollout.path);
+    const hint = typeof cwdHints[threadId] === 'string' ? cwdHints[threadId] : null;
+    const cwd = hint || (meta && meta.cwd) || null;
+    let messageCount = null;
+    let messageCountOmitted = null;
+    if (rollout.sizeBytes > maxScanBytes) {
+      messageCountOmitted = `rollout-too-large:${rollout.sizeBytes}`;
+    } else {
+      try {
+        const scan = await scanRollout(rollout.path, { collect: false });
+        messageCount = scan.stats.messages;
+      } catch (error) {
+        messageCountOmitted = `error:${error && error.message ? error.message : String(error)}`;
+      }
+    }
+    const threadEntry = {
+      id: threadId,
+      title: (indexEntry && indexEntry.title) || `Untitled thread ${threadId.slice(0, 8)}`,
+      updatedAt: (indexEntry && indexEntry.updatedAt) || new Date(rollout.mtimeMs).toISOString(),
+      cwd,
+      rolloutPath: rollout.path,
+      messageCount,
+      messageCountOmitted,
+    };
+    const realProject = cwd !== null ? projectByRoot.get(normalizePathKey(cwd)) : undefined;
+    if (realProject !== undefined) {
+      realProject.threads.push(threadEntry);
+      realProject.threadCount = realProject.threads.length;
+      continue;
+    }
+    const key = cwd !== null ? `cwd:${normalizePathKey(cwd)}` : 'orphans';
+    let bucket = synthetic.get(key);
+    if (bucket === undefined) {
+      bucket = {
+        id: key,
+        name: cwd !== null ? path.basename(cwd) || cwd : 'Unassigned chats',
+        rootPaths: cwd !== null ? [cwd] : [],
+        exists: cwd !== null ? pathExists(cwd) : false,
+        threadCount: 0,
+        threads: [],
+      };
+      synthetic.set(key, bucket);
+    }
+    bucket.threads.push(threadEntry);
+    bucket.threadCount = bucket.threads.length;
+  }
+  const syntheticProjects = [...synthetic.values()].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  for (const record of syntheticProjects) {
+    record.threads.sort((a, b) => {
+      const at = a.updatedAt || '';
+      const bt = b.updatedAt || '';
+      if (at !== bt) return bt.localeCompare(at);
+      return a.title.localeCompare(b.title, 'ru');
+    });
+    record.threadCount = record.threads.length;
+    projects.push(record);
   }
 
   return { projects };

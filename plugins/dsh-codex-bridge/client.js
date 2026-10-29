@@ -9,6 +9,7 @@ window.__ModuleLoader__.load({
     /** Host routes registered by index.js; they share this page's origin. */
     const CATALOG_URL = '/api/codex-import/catalog';
     const IMPORT_URL = '/api/codex-import/import';
+    const VERSION_URL = '/api/codex-import/version';
     /** Main-page key; the sidebar row uses the same value as its id. */
     const PANEL_ID = 'codex-import';
 
@@ -37,7 +38,10 @@ window.__ModuleLoader__.load({
       'project.import': 'Импортировать проект',
       'project.importAll': 'Все чаты',
       'page.importAll': 'Импортировать всё',
-      'import.allHint': 'Импортирую все проекты и все их чаты. Это может занять время.',      'project.update': 'Обновить проект',
+      'import.allHint': 'Импортирую все проекты и все их чаты. Это может занять время.',
+      'import.allProgress': 'Проект {current} из {total}: {name}',
+      'import.allChatsHint': 'Импортирую все чаты проекта, для каждого создаётся отдельный чат…',
+      'import.chatProgress': 'Чат {current} из {total}: {name}',      'project.update': 'Обновить проект',
       'project.imported': 'Уже импортирован',
       'project.showThreads': 'Треды ({count})',
       'project.hideThreads': 'Скрыть треды ({count})',
@@ -91,7 +95,10 @@ window.__ModuleLoader__.load({
       'project.import': 'Import project',
       'project.importAll': 'All chats',
       'page.importAll': 'Import everything',
-      'import.allHint': 'Importing every project and all of its chats. This can take a while.',      'project.update': 'Update project',
+      'import.allHint': 'Importing every project and all of its chats. This can take a while.',
+      'import.allProgress': 'Project {current} of {total}: {name}',
+      'import.allChatsHint': 'Importing every chat of the project and creating a separate chat for each…',
+      'import.chatProgress': 'Chat {current} of {total}: {name}',      'project.update': 'Update project',
       'project.imported': 'Already imported',
       'project.showThreads': 'Threads ({count})',
       'project.hideThreads': 'Hide threads ({count})',
@@ -720,6 +727,8 @@ window.__ModuleLoader__.load({
         const [importError, setImportError] = React.useState('');
         const [result, setResult] = React.useState(null);
         const [openError, setOpenError] = React.useState('');
+        const [bulk, setBulk] = React.useState(null);
+        const [bulkApi, setBulkApi] = React.useState(false);
         const alive = React.useRef(true);
 
         function readCatalog(showSpinner) {
@@ -730,6 +739,16 @@ window.__ModuleLoader__.load({
               setCatalog(payload);
               setLoadError('');
               setStatus('ready');
+              requestJson(VERSION_URL).then(
+                (capability) => {
+                  if (!alive.current) return;
+                  setBulkApi(capability.features !== undefined && capability.features !== null && capability.features.allThreads === true);
+                },
+                () => {
+                  if (!alive.current) return;
+                  setBulkApi(false);
+                }
+              );
             },
             (error) => {
               if (!alive.current) return;
@@ -747,26 +766,169 @@ window.__ModuleLoader__.load({
           };
         }, []);
 
-        function runImport(project, thread, options) {
+        /** Fold one import response into the counters the summary card shows. */
+        function summarizeImport(payload) {
+          const bulk = payload.bulk === true;
+          const totals = isRecord(payload.totals) ? payload.totals : {};
+          return {
+            threads: bulk ? countOf(totals.threads) : 1,
+            created: bulk ? countOf(totals.created) : payload.sessionCreated === true ? 1 : 0,
+            updated: bulk ? countOf(totals.updated) : payload.updated === true ? 1 : 0,
+            appended: bulk ? countOf(totals.appended) : countOf(payload.appended),
+            messages: bulk ? countOf(totals.messages) : countOf(payload.messages),
+            errors: countOf(totals.errors),
+            sessionId: textOf(bulk ? payload.firstSessionId : payload.sessionId),
+          };
+        }
+
+        /**
+         * Import every chat of one project. When the Host half supports bulk
+         * mode one request does the whole project; otherwise (an older Host is
+         * still running) the panel imports thread by thread, which every
+         * version understands.
+         */
+        async function importAllChatsOfProject(project) {
+          const threads = Array.isArray(project.threads) ? project.threads.filter(isRecord) : [];
+          if (threads.length === 0 || bulkApi) {
+            const payload = await requestJson(IMPORT_URL, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ projectId: project.id, allThreads: true }),
+            });
+            const summary = summarizeImport(payload);
+            const failed = payload.ok === false;
+            return {
+              ok: !failed,
+              firstSessionId: summary.sessionId,
+              totals: {
+                threads: summary.threads,
+                created: summary.created,
+                updated: summary.updated,
+                appended: summary.appended,
+                messages: summary.messages,
+                errors: summary.errors + (failed ? 1 : 0),
+              },
+              error: failed ? textOf(payload.error) : '',
+            };
+          }
+          const totals = { threads: 0, created: 0, updated: 0, appended: 0, messages: 0, errors: 0 };
+          const failures = [];
+          let firstSessionId = '';
+          for (let index = 0; index < threads.length; index += 1) {
+            const thread = threads[index];
+            if (!alive.current) return { ok: false, firstSessionId, totals, error: '' };
+            const threadName = textOf(thread.title) !== '' ? textOf(thread.title) : textOf(thread.id);
+            setBulk({ kind: 'chat', done: index, total: threads.length, name: threadName });
+            try {
+              const payload = await requestJson(IMPORT_URL, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ projectId: project.id, threadId: thread.id }),
+              });
+              totals.threads += 1;
+              totals.created += payload.sessionCreated === true ? 1 : 0;
+              totals.updated += payload.updated === true ? 1 : 0;
+              totals.appended += countOf(payload.appended);
+              totals.messages += countOf(payload.messages);
+              if (firstSessionId === '' && textOf(payload.sessionId) !== '') firstSessionId = payload.sessionId;
+            } catch (error) {
+              totals.errors += 1;
+              failures.push(threadName + ': ' + messageOf(error));
+            }
+          }
+          return { ok: failures.length === 0, firstSessionId, totals, error: failures.join('; ') };
+        }
+
+        /** "All chats" for one project. */
+        function runImportAllChats(project) {
           if (pendingKey !== '') return;
-          const allThreads = options !== undefined && options.allThreads === true;
-          const allProjects = options !== undefined && options.allProjects === true;
-          const key = allProjects
-            ? 'all'
-            : thread === null
-              ? allThreads
-                ? 'project:' + textOf(project.id) + ':all'
-                : 'project:' + textOf(project.id)
-              : 'thread:' + textOf(thread.id);
+          setPendingKey('project:' + textOf(project.id) + ':all');
+          setImportError('');
+          setOpenError('');
+          setResult(null);
+          importAllChatsOfProject(project).then(
+            (summary) => {
+              if (!alive.current) return;
+              setBulk(null);
+              setPendingKey('');
+              setResult({
+                ok: summary.ok,
+                bulk: true,
+                projectName: textOf(project.name),
+                firstSessionId: summary.firstSessionId,
+                totals: summary.totals,
+                ...(textOf(summary.error) !== '' ? { error: summary.error } : {}),
+              });
+              readCatalog(false);
+              void refreshSessionList();
+            },
+            (error) => {
+              if (!alive.current) return;
+              setBulk(null);
+              setPendingKey('');
+              setImportError(messageOf(error));
+            }
+          );
+        }
+
+        /** "Import everything": every project, every chat, with visible progress. */
+        async function runImportEverything() {
+          if (pendingKey !== '') return;
+          const list = projects.filter((project) => project.exists !== false);
+          if (list.length === 0) return;
+          setPendingKey('all');
+          setImportError('');
+          setOpenError('');
+          setResult(null);
+          const totals = { projects: 0, projectsOk: 0, threads: 0, created: 0, updated: 0, appended: 0, messages: 0, errors: 0 };
+          const failures = [];
+          let firstSessionId = '';
+          for (let index = 0; index < list.length; index += 1) {
+            const project = list[index];
+            if (!alive.current) return;
+            setBulk({ kind: 'project', done: index, total: list.length, name: textOf(project.name) });
+            try {
+              const summary = await importAllChatsOfProject(project);
+              totals.projects += 1;
+              if (summary.ok) totals.projectsOk += 1;
+              totals.threads += summary.totals.threads;
+              totals.created += summary.totals.created;
+              totals.updated += summary.totals.updated;
+              totals.appended += summary.totals.appended;
+              totals.messages += summary.totals.messages;
+              totals.errors += summary.totals.errors;
+              if (textOf(summary.error) !== '') failures.push(textOf(project.name) + ': ' + summary.error);
+              if (firstSessionId === '' && textOf(summary.firstSessionId) !== '') firstSessionId = summary.firstSessionId;
+            } catch (error) {
+              totals.projects += 1;
+              totals.errors += 1;
+              failures.push(textOf(project.name) + ': ' + messageOf(error));
+            }
+          }
+          if (!alive.current) return;
+          setBulk(null);
+          setPendingKey('');
+          setResult({
+            ok: totals.errors === 0,
+            bulk: true,
+            scope: 'all',
+            firstSessionId,
+            totals,
+            ...(failures.length > 0 ? { error: failures.join('; ') } : {}),
+          });
+          readCatalog(false);
+          void refreshSessionList();
+        }
+
+        /** Import one thread (or, with no thread, the project's most recent chat). */
+        function runImport(project, thread) {
+          if (pendingKey !== '') return;
+          const key = thread === null ? 'project:' + textOf(project.id) : 'thread:' + textOf(thread.id);
           setPendingKey(key);
           setImportError('');
           setOpenError('');
           setResult(null);
-          const body = allProjects
-            ? { allProjects: true }
-            : thread === null
-              ? { projectId: project.id, ...(allThreads ? { allThreads: true } : {}) }
-              : { projectId: project.id, threadId: thread.id };
+          const body = thread === null ? { projectId: project.id } : { projectId: project.id, threadId: thread.id };
           requestJson(IMPORT_URL, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
@@ -786,7 +948,6 @@ window.__ModuleLoader__.load({
             }
           );
         }
-
         function openChat(sessionId) {
           setOpenError('');
           const open = async () => {
@@ -845,7 +1006,7 @@ window.__ModuleLoader__.load({
                     {
                       variant: 'primary',
                       disabled: busy || projects.length === 0,
-                      onClick: () => runImport(null, null, { allProjects: true }),
+                      onClick: () => { void runImportEverything(); },
                     },
                     t('page.importAll')
                   )
@@ -862,7 +1023,16 @@ window.__ModuleLoader__.load({
               busy
                 ? h(ProgressBanner, {
                     title: t('import.progressTitle'),
-                    hint: pendingKey === 'all' ? t('import.allHint') : t('import.progressHint'),
+                    hint:
+                      bulk !== null
+                        ? bulk.kind === 'chat'
+                          ? t('import.chatProgress', { current: bulk.done + 1, total: bulk.total, name: bulk.name })
+                          : t('import.allProgress', { current: bulk.done + 1, total: bulk.total, name: bulk.name })
+                        : pendingKey === 'all'
+                          ? t('import.allHint')
+                          : pendingKey.endsWith(':all')
+                            ? t('import.allChatsHint')
+                            : t('import.progressHint'),
                   })
                 : null,
               textOf(importError) === '' ? null : h(ErrorBanner, { title: t('error.title'), text: importError }),
@@ -899,7 +1069,8 @@ window.__ModuleLoader__.load({
                   key: textOf(project.id) !== '' ? project.id : 'project-' + index,
                   project: project,
                   pendingKey: pendingKey,
-                  onImportProject: (selected, options) => runImport(selected, null, options),
+                  onImportProject: (selected, options) =>
+                    options !== undefined && options.allThreads === true ? runImportAllChats(selected) : runImport(selected, null),
                   onImportThread: (selected, thread) => runImport(selected, thread),
                 })
               )

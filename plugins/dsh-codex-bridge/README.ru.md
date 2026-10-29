@@ -45,7 +45,7 @@ dsh plugin --profile desktop add 'github:MaximFedorovtoo/dsh-plugins#<commit>&pa
 | `importMode` | `in-place` | `in-place` — проект остаётся в своей папке; `copy` — копия в `targetRoot` |
 | `codexHome` | `''` → `$CODEX_HOME` или `~/.codex` | Где лежат данные Codex |
 | `targetRoot` | `Documents/deepseek-harness/Codex` | Куда копировать проекты в режиме `copy` |
-| `maxTranscriptChars` | `1500000` | Лимит текста переписки (берутся последние сообщения) |
+| `maxTranscriptChars` | `0` | `0` — импортировать всю переписку; положительное число — только последние N символов |
 | `excludeNames` | `node_modules`, `.next`, `.nuxt`, `.turbo`, `.cache` | Что не копировать в режиме `copy` |
 
 Пример включения режима копирования:

@@ -33,6 +33,8 @@ const DEFAULT_EXCLUDE = ['node_modules', '.next', '.nuxt', '.turbo', '.cache'];
 const MANIFEST_NAME = '.codex-import.json';
 /** Manifest identity marker. */
 const MANIFEST_PLUGIN = 'dsh-codex-bridge';
+/** Plugin version reported by the capability route; the panel uses it to pick a bulk path. */
+const PLUGIN_VERSION = '1.2.1';
 
 /**
  * Read the plugin config with defaults applied.
@@ -45,10 +47,12 @@ function resolveConfig(config) {
     codexHome: typeof raw.codexHome === 'string' && raw.codexHome.length > 0 ? raw.codexHome : resolveCodexHome(),
     targetRoot:
       typeof raw.targetRoot === 'string' && raw.targetRoot.length > 0 ? resolve(raw.targetRoot) : DEFAULT_TARGET_ROOT,
+    // 0 = import the whole transcript. A positive value keeps only the newest
+    // messages that fit the budget, for very large threads on slow machines.
     maxTranscriptChars:
       typeof raw.maxTranscriptChars === 'number' && Number.isFinite(raw.maxTranscriptChars) && raw.maxTranscriptChars > 0
         ? Math.floor(raw.maxTranscriptChars)
-        : 1_500_000,
+        : 0,
     importMode: raw.importMode === 'copy' ? 'copy' : 'in-place',
     excludeNames: Array.isArray(raw.excludeNames)
       ? raw.excludeNames.filter((value) => typeof value === 'string' && value.length > 0)
@@ -426,14 +430,21 @@ async function importThread(ctx, cfg, project, target, thread) {
     messages = transcript.messages ?? [];
     transcriptTitle = transcript.title || transcriptTitle;
   }
-  // Keep the first import bounded: the newest messages matter most for continuing work.
-  const bounded = [];
-  let usedChars = 0;
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    usedChars += message.text.length;
-    if (usedChars > cfg.maxTranscriptChars && bounded.length > 0) break;
-    bounded.unshift(message);
+  // The default imports the whole transcript. A positive `maxTranscriptChars`
+  // keeps the newest messages that fit the budget instead.
+  let bounded = messages;
+  let truncated = false;
+  if (cfg.maxTranscriptChars > 0) {
+    const budgeted = [];
+    let usedChars = 0;
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const message = messages[index];
+      usedChars += message.text.length;
+      if (usedChars > cfg.maxTranscriptChars && budgeted.length > 0) break;
+      budgeted.unshift(message);
+    }
+    truncated = budgeted.length < messages.length;
+    bounded = budgeted;
   }
 
   const title = transcriptTitle ? `Codex · ${project.name} · ${transcriptTitle}` : `Codex · ${project.name}`;
@@ -523,6 +534,9 @@ async function importThread(ctx, cfg, project, target, thread) {
   manifest.importedAt = new Date().toISOString();
   await writeManifest(target.targetDir, manifest);
 
+  if (truncated) {
+    appendWarning = `transcript truncated to the newest ${cfg.maxTranscriptChars} characters (set maxTranscriptChars: 0 to import everything)`;
+  }
   const warnings = [appendWarning, attachWarning].filter((value) => typeof value === 'string' && value.length > 0);
   return {
     threadId: threadKey,
@@ -532,6 +546,8 @@ async function importThread(ctx, cfg, project, target, thread) {
     sessionCreated,
     appended,
     messages: messages.length,
+    importedMessages: bounded.length,
+    truncated,
     eventCount,
     updated: target.updating,
     attached: attachWarning === null && sessionId !== null,
@@ -553,6 +569,18 @@ async function importProject(ctx, cfg, request) {
     catalog.projects.find((candidate) => candidate.id === request.projectId) ??
     catalog.projects.find((candidate) => candidate.name === request.projectId);
   if (!project) throw new Error(`project not found in Codex: ${String(request.projectId)}`);
+  return importResolvedProject(ctx, cfg, project, request);
+}
+
+/**
+ * Import one project record that the caller already read from the catalog.
+ * @param {object} ctx - plugin Context.
+ * @param {ReturnType<typeof resolveConfig>} cfg - resolved plugin config.
+ * @param {object} project - catalog project record.
+ * @param {{ targetName?: string, allThreads?: boolean, threadId?: string | null }} request - import selection.
+ * @returns {Promise<object>} import result JSON.
+ */
+async function importResolvedProject(ctx, cfg, project, request) {
   if (project.exists === false) throw new Error(`project directory is missing: ${project.rootPaths.join(', ')}`);
 
   const target = await resolveProjectTarget(ctx, cfg, project, request);
@@ -630,7 +658,7 @@ async function importAllProjects(ctx, cfg) {
   const results = [];
   for (const project of projects) {
     try {
-      results.push(await importProject(ctx, cfg, { projectId: project.id, allThreads: true }));
+      results.push(await importResolvedProject(ctx, cfg, project, { allThreads: true }));
     } catch (error) {
       results.push({
         ok: false,
@@ -745,6 +773,22 @@ export function apply(ctx, config) {
           return Response.json({ ok: false, error: error instanceof Error ? error.message : String(error) }, { status: 500 });
         }
       },
+    }),
+  );
+
+  // Capability probe: a Client bundle from a newer version can fall back to
+  // one-request-per-thread when the Host half is still an older build.
+  ctx.effect(() =>
+    ctx.connection.fetch.register({
+      path: '/api/codex-import/version',
+      methods: ['GET'],
+      requestBody: 'buffered',
+      fetch: async () =>
+        Response.json({
+          ok: true,
+          version: PLUGIN_VERSION,
+          features: { allThreads: true, allProjects: true },
+        }),
     }),
   );
 

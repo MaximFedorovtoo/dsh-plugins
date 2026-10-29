@@ -189,6 +189,6 @@ export async function createImportedSession(ctx, { cwd, title, messages, source 
 
 ### index.js (Lead)
 
-- Config: `importMode` (`in-place` | `copy`), `codexHome` ('' = автопоиск), `targetRoot`, `maxTranscriptChars`, `excludeNames`.
+- Config: `importMode` (`in-place` | `copy`), `codexHome` ('' = автопоиск), `targetRoot`, `maxTranscriptChars` (0 = вся переписка), `excludeNames`.
 - `apply(ctx, config)`: инструмент `codex_import`, два fetch-маршрута, сервис импорта
   (`resolveProjectTarget` → на каждый выбранный тред `importThread`: чтение транскрипта → создание/дописывание сессии → манифест).
