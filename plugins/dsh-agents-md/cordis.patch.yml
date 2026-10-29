@@ -1,0 +1,12 @@
+# Global instructions package.
+#
+# The Host half copies the bundled AGENTS.md to <DSH_HOME>/AGENTS.md once per
+# load. An existing different file is kept unless overwrite is true.
+- insert:
+    - id: agents-md
+      name: dsh-agents-md
+      config:
+        # '' = <DSH_HOME>/AGENTS.md. A relative path resolves inside DSH_HOME.
+        target: ''
+        # false keeps a user's existing AGENTS.md untouched.
+        overwrite: false
