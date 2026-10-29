@@ -37,7 +37,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
+            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
             "path": "/plugins/dsh-agents-md"
           },
           "engines": {
@@ -72,7 +72,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
+            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
             "path": "/plugins/dsh-api-spend"
           },
           "engines": {
@@ -107,8 +107,43 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
+            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
             "path": "/plugins/dsh-codex-bridge"
+          },
+          "engines": {
+            "dsh": ">=0.2.0 <0.3.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-instructions",
+      "title": {
+        "en": "Instructions Panel",
+        "ru": "Панель инструкций",
+        "zh": "指令面板"
+      },
+      "description": {
+        "en": "A sidebar panel that uploads, edits and saves the machine-wide instruction file $DSH_HOME/AGENTS.md, so uploaded rules apply by default in every DSH session.",
+        "ru": "Панель в боковом меню: загрузить, отредактировать и сохранить машинный файл инструкций $DSH_HOME/AGENTS.md — правила действуют по умолчанию во всех сессиях DSH.",
+        "zh": "侧边栏面板：上传、编辑并保存机器级指令文件 $DSH_HOME/AGENTS.md，上传的规则将在所有 DSH 会话中默认生效。"
+      },
+      "icon": "icons/dsh-instructions.svg",
+      "author": "Maxim Fedorov (MaximFedorovtoo)",
+      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-instructions",
+      "repository": {
+        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+        "directory": "plugins/dsh-instructions"
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1793270318,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
+            "path": "/plugins/dsh-instructions"
           },
           "engines": {
             "dsh": ">=0.2.0 <0.3.0"
@@ -142,7 +177,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
+            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
             "path": "/plugins/dsh-locale-ru"
           },
           "engines": {
@@ -177,7 +212,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
+            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
             "path": "/plugins/dsh-screenshot"
           },
           "engines": {
