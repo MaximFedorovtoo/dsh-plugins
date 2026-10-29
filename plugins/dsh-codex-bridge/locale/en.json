@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Codex import",
+    "description": "Moves projects and conversations from OpenAI Codex into DeepSeek Harness: copies the project files and creates a chat with the history."
+  }
+}

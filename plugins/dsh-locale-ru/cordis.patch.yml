@@ -1,0 +1,7 @@
+# Russian language pack bundle.
+#
+# The Host half (lib/index.js) is an empty apply(); every dictionary lives in
+# the browser half and registers through ctx.locale (inject: ['locale']).
+- insert:
+    - id: locale-ru
+      name: dsh-locale-ru

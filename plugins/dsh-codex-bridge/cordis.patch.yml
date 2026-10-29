@@ -1,0 +1,17 @@
+# Plugin rows for dsh-codex-bridge.
+#
+# importMode:
+#   in-place (default) - the Codex project stays in its own folder, and that same
+#                        folder becomes the DSH workspace; no copy is created.
+#   copy               - the project is cloned under targetRoot and the copy is
+#                        refreshed in place on later imports.
+# Empty paths mean defaults from index.js (codexHome: ~/.codex,
+# targetRoot: Documents/deepseek-harness/Codex - used by copy mode only).
+- insert:
+    - id: codex-import
+      name: dsh-codex-bridge
+      config:
+        importMode: in-place
+        codexHome: ""
+        targetRoot: ""
+        maxTranscriptChars: 1500000

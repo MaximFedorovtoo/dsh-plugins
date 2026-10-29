@@ -6,8 +6,8 @@ Four plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 |---|---|---|
 | [`dsh-api-spend`](plugins/dsh-api-spend) | Shows the API spend of the current project next to the token counters; the pill opens a per-project breakdown for Today / 7 days / All time plus the provider platform's own totals for comparison. | Windows, macOS, Linux |
 | [`dsh-screenshot`](plugins/dsh-screenshot) | A screenshot button in the composer (reads the clipboard image or opens the file picker), an annotation editor on attached images (pen, arrow, rectangle, text), agent tools to look at the screen or the clipboard, and a region zoom tool. | UI on every platform; screen and clipboard capture on Windows only |
-| [`dsh-locale-ru`](https://github.com/MaximFedorovtoo/dsh-locale-ru) | Full Russian localization of the web client: 64 namespaces, 2910 interface strings and 545 plugin titles/descriptions. | Windows, macOS, Linux |
-| [`dsh-codex-bridge`](https://github.com/MaximFedorovtoo/dsh-codex-bridge) | Imports projects and chat history from the OpenAI Codex app into DSH: the project stays in its own folder and the chat continues in DSH. | Windows, macOS, Linux |
+| [`dsh-locale-ru`](plugins/dsh-locale-ru) | Full Russian localization of the web client: 64 namespaces, 2910 interface strings and 545 plugin titles/descriptions. | Windows, macOS, Linux |
+| [`dsh-codex-bridge`](plugins/dsh-codex-bridge) | Imports projects and chat history from the OpenAI Codex app into DSH: the project stays in its own folder and the chat continues in DSH. | Windows, macOS, Linux |
 
 All plugins are plain JavaScript with no dependencies and no build step. Installation is identical on every OS; the only platform limitation is screen capture in `dsh-screenshot` (see [platform support](#platform-support)).
 
@@ -114,14 +114,16 @@ Rates are USD per million tokens at peak hours; off-peak applies `offPeakFactor`
 dsh-plugins/
 ├── plugins/
 │   ├── dsh-screenshot/     # package dsh-screenshot
-│   └── dsh-api-spend/      # package dsh-api-spend
+│   ├── dsh-api-spend/      # package dsh-api-spend
+│   ├── dsh-locale-ru/      # package dsh-locale-ru (Russian localization)
+│   └── dsh-codex-bridge/   # package dsh-codex-bridge (Codex import)
 ├── icons/                  # icons for the Discover index
 ├── index.json              # plugin index for the Discover tab
 ├── INSTALL.md              # installation guide (Russian)
 └── INSTALL.en.md           # this guide's companion (English)
 ```
 
-The other two plugins — the [Russian localization](https://github.com/MaximFedorovtoo/dsh-locale-ru) and [Codex Bridge](https://github.com/MaximFedorovtoo/dsh-codex-bridge) — live in their own repositories, with their own history and installers. The Discover index above already lists them together with these two.
+All four plugins live in this repository, each in its own folder under `plugins/`, with its own README and install guide.
 
 ## License
 

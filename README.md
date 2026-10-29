@@ -6,8 +6,8 @@
 |---|---|---|
 | [`dsh-api-spend`](plugins/dsh-api-spend) | Показывает расходы на API в текущем проекте рядом со счётчиками токенов; клик — разбивка по проектам за «Сегодня / 7 дней / Всё время» и официальные итоги платформы для сверки. | Windows, macOS, Linux |
 | [`dsh-screenshot`](plugins/dsh-screenshot) | Кнопка «скриншот» в поле ввода (берёт картинку из буфера или открывает выбор файла), редактор разметки прямо во вложении (кисть, стрелка, рамка, текст), инструменты агента «посмотреть на экран / на буфер» и «увеличить участок изображения». | Интерфейс — на всех платформах; снимок экрана и буфера — только Windows |
-| [`dsh-locale-ru`](https://github.com/MaximFedorovtoo/dsh-locale-ru) | Полная русская локализация веб-клиента: 64 неймспейса, 2910 строк интерфейса и 545 названий/описаний плагинов. | Windows, macOS, Linux |
-| [`dsh-codex-bridge`](https://github.com/MaximFedorovtoo/dsh-codex-bridge) | Переносит проекты и переписку из OpenAI Codex в DSH: проект остаётся в своей папке, чат продолжается в DSH. | Windows, macOS, Linux |
+| [`dsh-locale-ru`](plugins/dsh-locale-ru) | Полная русская локализация веб-клиента: 64 неймспейса, 2910 строк интерфейса и 545 названий/описаний плагинов. | Windows, macOS, Linux |
+| [`dsh-codex-bridge`](plugins/dsh-codex-bridge) | Переносит проекты и переписку из OpenAI Codex в DSH: проект остаётся в своей папке, чат продолжается в DSH. | Windows, macOS, Linux |
 
 Все плагины — чистый JavaScript без зависимостей и без этапа сборки. Устанавливаются одинаково на всех ОС; ограничение по платформам касается только захвата экрана в `dsh-screenshot` (см. [совместимость](#совместимость-по-платформам)).
 
@@ -119,14 +119,16 @@ dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit
 dsh-plugins/
 ├── plugins/
 │   ├── dsh-screenshot/     # пакет dsh-screenshot
-│   └── dsh-api-spend/      # пакет dsh-api-spend
+│   ├── dsh-api-spend/      # пакет dsh-api-spend
+│   ├── dsh-locale-ru/      # пакет dsh-locale-ru (русская локализация)
+│   └── dsh-codex-bridge/   # пакет dsh-codex-bridge (перенос из Codex)
 ├── icons/                  # иконки для индекса Discover
 ├── index.json              # индекс для вкладки Discover
 ├── INSTALL.md              # инструкция по установке (рус.)
 └── INSTALL.en.md           # installation guide (English)
 ```
 
-Два других плагина — [русская локализация](https://github.com/MaximFedorovtoo/dsh-locale-ru) и [Codex Bridge](https://github.com/MaximFedorovtoo/dsh-codex-bridge) — живут в отдельных репозиториях: у них своя история и свои установщики. В индексе Discover выше они уже перечислены вместе с этими двумя.
+Все четыре плагина живут в этом репозитории; у каждого своя папка в `plugins/`, свои README и инструкция по установке.
 
 ## Лицензия
 
