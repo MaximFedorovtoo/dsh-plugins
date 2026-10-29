@@ -37,7 +37,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "8a30f3a94ae1c94727fc45d6c96e11f37019846e",
+            "commit": "9620cae418fb08f41abc296bee5d732906a901d1",
             "path": "/plugins/dsh-api-spend"
           },
           "engines": {
@@ -67,12 +67,12 @@
       },
       "versions": [
         {
-          "version": "1.1.0",
-          "publishTimestamp": 1793261175,
+          "version": "1.2.0",
+          "publishTimestamp": 1793262245,
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "8a30f3a94ae1c94727fc45d6c96e11f37019846e",
+            "commit": "9620cae418fb08f41abc296bee5d732906a901d1",
             "path": "/plugins/dsh-codex-bridge"
           },
           "engines": {
@@ -107,7 +107,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "8a30f3a94ae1c94727fc45d6c96e11f37019846e",
+            "commit": "9620cae418fb08f41abc296bee5d732906a901d1",
             "path": "/plugins/dsh-locale-ru"
           },
           "engines": {
@@ -142,7 +142,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "8a30f3a94ae1c94727fc45d6c96e11f37019846e",
+            "commit": "9620cae418fb08f41abc296bee5d732906a901d1",
             "path": "/plugins/dsh-screenshot"
           },
           "engines": {
