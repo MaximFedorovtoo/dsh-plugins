@@ -12,6 +12,41 @@
   },
   "plugins": [
     {
+      "name": "dsh-agents-md",
+      "title": {
+        "en": "AGENTS.md Instructions",
+        "ru": "Глобальные инструкции AGENTS.md",
+        "zh": "AGENTS.md 全局指令"
+      },
+      "description": {
+        "en": "Installs the author's global working rules as $DSH_HOME/AGENTS.md so every DSH session in every project loads them; an existing file is kept unless overwrite is enabled.",
+        "ru": "Кладёт глобальные инструкции автора в $DSH_HOME/AGENTS.md, чтобы они подгружались в каждую сессию любого проекта; существующий файл сохраняется, пока не включён overwrite.",
+        "zh": "将作者的全局工作规则安装为 $DSH_HOME/AGENTS.md，使每个项目的每个会话都会加载；默认保留已有文件。"
+      },
+      "icon": "icons/dsh-agents-md.svg",
+      "author": "Maxim Fedorov (MaximFedorovtoo)",
+      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-agents-md",
+      "repository": {
+        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+        "directory": "plugins/dsh-agents-md"
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1793270077,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
+            "path": "/plugins/dsh-agents-md"
+          },
+          "engines": {
+            "dsh": ">=0.2.0 <0.3.0"
+          }
+        }
+      ]
+    },
+    {
       "name": "dsh-api-spend",
       "title": {
         "en": "API Spend",
@@ -37,7 +72,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "1bbfb9af945c9e3972a6ed21a03eb8bc12034a4a",
+            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
             "path": "/plugins/dsh-api-spend"
           },
           "engines": {
@@ -72,7 +107,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "1bbfb9af945c9e3972a6ed21a03eb8bc12034a4a",
+            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
             "path": "/plugins/dsh-codex-bridge"
           },
           "engines": {
@@ -107,7 +142,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "1bbfb9af945c9e3972a6ed21a03eb8bc12034a4a",
+            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
             "path": "/plugins/dsh-locale-ru"
           },
           "engines": {
@@ -142,7 +177,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "1bbfb9af945c9e3972a6ed21a03eb8bc12034a4a",
+            "commit": "97e545389ef8353f7c045074b90e195c243a6890",
             "path": "/plugins/dsh-screenshot"
           },
           "engines": {
