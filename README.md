@@ -126,6 +126,8 @@ dsh-plugins/
 └── INSTALL.en.md           # installation guide (English)
 ```
 
+Два других плагина — [русская локализация](https://github.com/MaximFedorovtoo/dsh-locale-ru) и [Codex Bridge](https://github.com/MaximFedorovtoo/dsh-codex-bridge) — живут в отдельных репозиториях: у них своя история и свои установщики. В индексе Discover выше они уже перечислены вместе с этими двумя.
+
 ## Лицензия
 
 MIT — см. [LICENSE](LICENSE).

@@ -121,6 +121,8 @@ dsh-plugins/
 └── INSTALL.en.md           # this guide's companion (English)
 ```
 
+The other two plugins — the [Russian localization](https://github.com/MaximFedorovtoo/dsh-locale-ru) and [Codex Bridge](https://github.com/MaximFedorovtoo/dsh-codex-bridge) — live in their own repositories, with their own history and installers. The Discover index above already lists them together with these two.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
