@@ -153,6 +153,10 @@ On import the plugin:
   preserved.
 - File checksums are not stored in the manifest (the archive is protected by
   gzip integrity and by reading every file during extraction).
+- Directories or files the process cannot read (for example a folder with a deny
+  ACL left behind by a security test) are skipped with a warning; the rest of the
+  project is packed and the export keeps going. Only an unreadable project root
+  fails the export. A failed export never leaves a half-written archive behind.
 
 ## Self-checks
 

@@ -4,11 +4,11 @@
  *
  * Run: node test/archive.test.mjs
  */
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, statSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { packArchive, unpackArchive, readManifest, pickDestination } from '../lib/archive.js';
+import { packArchive, unpackArchive, readManifest, pickDestination, walkProject } from '../lib/archive.js';
 import { buildManifest, validateManifest, summarizeManifest } from '../lib/manifest.js';
 
 let failures = 0;
@@ -133,6 +133,60 @@ const partial = await unpackArchive({
 });
 check('session failure collected', partial.errors.length, 2);
 check('session failure keeps files', partial.files, 4);
+
+// --- unreadable entries are skipped, not fatal ------------------------------
+const guardedRoot = mkdtempSync(join(tmpdir(), 'dshpack-guarded-'));
+mkdirSync(join(guardedRoot, 'ok'), { recursive: true });
+mkdirSync(join(guardedRoot, 'blocked'), { recursive: true });
+writeFileSync(join(guardedRoot, 'ok', 'a.txt'), 'A');
+writeFileSync(join(guardedRoot, 'blocked', 'secret.txt'), 'B');
+/** Readdir stub that emulates a Windows deny-ACL directory. */
+function fakeReaddir(dir, options) {
+  if (String(dir).endsWith('blocked')) {
+    const error = new Error('operation not permitted, scandir');
+    error.code = 'EPERM';
+    throw error;
+  }
+  return readdirSync(dir, options);
+}
+const walkWarnings = [];
+const guardedWalk = walkProject(guardedRoot, { readdir: fakeReaddir, onWarning: (message) => walkWarnings.push(message) });
+check('walk skips unreadable directory', guardedWalk.files.map((file) => file.relPath), ['ok/a.txt']);
+check('walk reports the skip', walkWarnings.some((message) => message.includes('directory skipped (EPERM') && message.includes('blocked')), true);
+check('walk counts skipped entries', guardedWalk.skipped >= 1, true);
+
+const guardedArchive = join(tmpdir(), `dshpack-guarded-${process.pid}.dshpack`);
+const packWarnings = [];
+const guardedPacked = await packArchive({
+  archivePath: guardedArchive,
+  manifest: { pluginVersion: '1.0.1', project: { name: 'guarded', originalPath: guardedRoot } },
+  projectDir: guardedRoot,
+  readdir: fakeReaddir,
+  onWarning: (message) => packWarnings.push(message),
+});
+check('pack continues past an unreadable directory', guardedPacked.files, 1);
+check('pack surfaces the skip warning', packWarnings.some((message) => message.includes('directory skipped')), true);
+const guardedExtract = join(tmpdir(), `dshpack-guarded-extract-${process.pid}`);
+await unpackArchive({ archivePath: guardedArchive, projectDir: guardedExtract });
+check('readable file packed', existsSync(join(guardedExtract, 'ok', 'a.txt')), true);
+check('blocked directory absent from archive', existsSync(join(guardedExtract, 'blocked')), false);
+
+// A project root that cannot be walked fails before the archive file appears.
+const notADirectory = join(tmpdir(), `dshpack-not-a-dir-${process.pid}.txt`);
+writeFileSync(notADirectory, 'x');
+const failedArchive = join(tmpdir(), `dshpack-should-not-exist-${process.pid}.dshpack`);
+let failedLoudly = false;
+try {
+  await packArchive({
+    archivePath: failedArchive,
+    manifest: { pluginVersion: '1.0.1', project: { name: 'bad', originalPath: notADirectory } },
+    projectDir: notADirectory,
+  });
+} catch {
+  failedLoudly = true;
+}
+check('unreadable project root fails loudly', failedLoudly, true);
+check('failed export leaves no archive file', existsSync(failedArchive), false);
 
 if (failures === 0) {
   console.log('ALL CHECKS PASSED');

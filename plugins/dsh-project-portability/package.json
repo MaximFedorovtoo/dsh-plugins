@@ -1,6 +1,6 @@
 {
   "name": "dsh-project-portability",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Portable DSH projects: export a workspace with all of its files, chats and context into one .dshpack archive, carry it on an external drive, and import it on another computer so work continues in the same chats.",
   "license": "MIT",

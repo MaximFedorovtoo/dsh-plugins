@@ -17,7 +17,7 @@
  * @module dsh-project-portability/lib/archive
  */
 import { createReadStream, createWriteStream, readdirSync, statSync, existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -34,24 +34,60 @@ export const SESSION_PREFIX = 'sessions/';
 export const ATTACHMENT_PREFIX = 'attachments/';
 
 /**
+ * Describe one filesystem error for a warning line.
+ * @param {unknown} error - caught value.
+ * @returns {string} `CODE: message`.
+ */
+function describeFsError(error) {
+  const code = error !== null && typeof error === 'object' && typeof error.code === 'string' ? error.code : 'ERROR';
+  const message = error instanceof Error ? error.message : String(error);
+  return `${code}: ${message}`;
+}
+
+/**
  * Recursively list a project tree in a stable order.
+ *
+ * Entries the process may not read (for example a directory with a deny ACL
+ * left behind by a security test) are skipped with a warning instead of
+ * aborting the whole export: one unreadable folder must not cost the user the
+ * other 48 000 files of the project. Only an unreadable project root is fatal.
+ *
  * @param {string} root - project directory.
  * @param {object} [options] - walk options.
  * @param {string[]} [options.excludeNames] - names skipped at any depth.
  * @param {(warning: string) => void} [options.onWarning] - skipped-entry sink.
- * @returns {{ files: Array<{ relPath: string, absPath: string, size: number, mtime: number }>, directories: string[], bytes: number }}
+ * @param {typeof readdirSync} [options.readdir] - directory reader (injectable for tests).
+ * @param {typeof statSync} [options.stat] - file stat (injectable for tests).
+ * @returns {{ files: Array<{ relPath: string, absPath: string, size: number, mtime: number }>, directories: string[], bytes: number, skipped: number }}
  */
 export function walkProject(root, options = {}) {
   const excludes = new Set((options.excludeNames ?? []).map((name) => String(name)));
+  const readdir = options.readdir ?? readdirSync;
+  const stat = options.stat ?? statSync;
   /** @type {Array<{ relPath: string, absPath: string, size: number, mtime: number }>} */
   const files = [];
   /** @type {string[]} */
   const directories = [];
   let bytes = 0;
-  const warn = (message) => { if (typeof options.onWarning === 'function') options.onWarning(message); };
+  let skipped = 0;
+  const warn = (message) => {
+    skipped += 1;
+    if (typeof options.onWarning === 'function') options.onWarning(message);
+  };
   /** @param {string} dir @param {string} rel */
   const visit = (dir, rel) => {
-    const entries = readdirSync(dir, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name));
+    /** @type {import('node:fs').Dirent[]} */
+    let entries;
+    try {
+      entries = readdir(dir, { withFileTypes: true });
+    } catch (error) {
+      // An unreadable project root is a real problem (wrong path, no access at
+      // all) and must be reported; an unreadable nested folder is skipped.
+      if (rel.length === 0) throw new Error(`cannot read project directory ${dir}: ${describeFsError(error)}`, { cause: error });
+      warn(`directory skipped (${describeFsError(error)}): ${rel}`);
+      return;
+    }
+    entries.sort((left, right) => left.name.localeCompare(right.name));
     if (entries.length === 0 && rel.length > 0) directories.push(rel);
     for (const entry of entries) {
       if (excludes.has(entry.name)) continue;
@@ -64,7 +100,13 @@ export function walkProject(root, options = {}) {
       if (entry.isDirectory()) {
         visit(absPath, relPath);
       } else if (entry.isFile()) {
-        const stats = statSync(absPath);
+        let stats;
+        try {
+          stats = stat(absPath);
+        } catch (error) {
+          warn(`file skipped (${describeFsError(error)}): ${relPath}`);
+          continue;
+        }
         files.push({ relPath, absPath, size: stats.size, mtime: Math.floor(stats.mtimeMs / 1000) });
         bytes += stats.size;
       } else {
@@ -73,7 +115,7 @@ export function walkProject(root, options = {}) {
     }
   };
   visit(root, '');
-  return { files, directories, bytes };
+  return { files, directories, bytes, skipped };
 }
 
 /**
@@ -86,16 +128,26 @@ export function walkProject(root, options = {}) {
  * @param {Array<{ meta: object, events?: Array<object>, load?: () => Promise<{ events: Array<object>, meta?: object }> }>} [input.sessions] - chats to pack; `load` defers reading one chat's log until it is written, so a project with many chats never holds them all in memory.
  * @param {Array<{ archivePath: string, buffer?: Buffer, absPath?: string }>} [input.attachments] - blobs to pack.
  * @param {(message: string) => void} [input.onWarning] - skipped-entry sink.
+ * @param {typeof readdirSync} [input.readdir] - injected directory reader (tests).
+ * @param {typeof statSync} [input.stat] - injected file stat (tests).
  * @returns {Promise<{ manifest: object, files: number, bytes: number, sessions: number, attachments: number, archivePath: string }>}
  */
 export async function packArchive(input) {
-  const writer = new TarWriter(input.archivePath);
-  const walk = walkProject(input.projectDir, { excludeNames: input.excludeNames, onWarning: input.onWarning });
+  // Walk first: an unreadable project root must fail before any archive file is
+  // created, and per-directory ACL problems are skipped with warnings instead
+  // of aborting the whole export.
+  const walk = walkProject(input.projectDir, {
+    excludeNames: input.excludeNames,
+    onWarning: input.onWarning,
+    readdir: input.readdir,
+    stat: input.stat,
+  });
   const sessions = Array.isArray(input.sessions) ? input.sessions : [];
   const attachments = Array.isArray(input.attachments) ? input.attachments : [];
   const sessionPath = (index) => `sessions/${String(index).padStart(4, '0')}`;
   /** Attachments discovered while streaming chats; written after the chats they belong to. */
   const lazyAttachments = new Map();
+  const warn = (message) => { if (typeof input.onWarning === 'function') input.onWarning(message); };
   const manifest = buildManifest({
     ...input.manifest,
     project: {
@@ -110,10 +162,19 @@ export async function packArchive(input) {
     })),
     attachments: attachments.map((attachment) => ({ archivePath: attachment.archivePath })),
   });
+  const writer = new TarWriter(input.archivePath);
   try {
     await writer.addBuffer(MANIFEST_ENTRY, Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, 'utf8'));
     for (const directory of walk.directories) await writer.addDirectory(joinArchivePath(PROJECT_PREFIX, directory));
-    for (const file of walk.files) await writer.addFile(joinArchivePath(PROJECT_PREFIX, file.relPath), file.absPath);
+    for (const file of walk.files) {
+      try {
+        await writer.addFile(joinArchivePath(PROJECT_PREFIX, file.relPath), file.absPath);
+      } catch (error) {
+        // The file was readable while walking but failed (or vanished) while
+        // streaming: skip it, keep the rest of the project.
+        warn(`file skipped (${describeFsError(error)}): ${file.relPath}`);
+      }
+    }
     for (const [index, session] of sessions.entries()) {
       const loaded = typeof session.load === 'function' ? await session.load() : { events: session.events ?? [], meta: {} };
       const events = Array.isArray(loaded.events) ? loaded.events : [];
@@ -134,8 +195,12 @@ export async function packArchive(input) {
     }
     for (const attachment of attachments) lazyAttachments.set(attachment.archivePath, attachment);
     for (const attachment of lazyAttachments.values()) {
-      if (Buffer.isBuffer(attachment.buffer)) await writer.addBuffer(attachment.archivePath, attachment.buffer);
-      else if (typeof attachment.absPath === 'string' && existsSync(attachment.absPath)) await writer.addFile(attachment.archivePath, attachment.absPath);
+      try {
+        if (Buffer.isBuffer(attachment.buffer)) await writer.addBuffer(attachment.archivePath, attachment.buffer);
+        else if (typeof attachment.absPath === 'string' && existsSync(attachment.absPath)) await writer.addFile(attachment.archivePath, attachment.absPath);
+      } catch (error) {
+        warn(`attachment skipped (${describeFsError(error)}): ${attachment.archivePath}`);
+      }
     }
     const finished = await writer.finish();
     return {
@@ -149,6 +214,8 @@ export async function packArchive(input) {
     };
   } catch (error) {
     await writer.finish().catch(() => {});
+    // A failed export must not leave a half-written `.dshpack` behind.
+    await rm(input.archivePath, { force: true }).catch(() => {});
     throw error;
   }
 }
