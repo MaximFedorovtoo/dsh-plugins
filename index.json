@@ -322,7 +322,7 @@
                                                             "type":  "git",
                                                             "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
                                                             "commit":  "fc5fbef749ea9c51666e63bc14292563799c7d97",
-                                                            "path":  "/plugins/dsh-voice-ru"
+                                                            "path":  "plugins/dsh-voice-ru"
                                                         },
                                              "engines":  {
                                                              "dsh":  "\u003e=0.2.0 \u003c0.3.0"
