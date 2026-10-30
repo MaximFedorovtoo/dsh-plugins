@@ -38,6 +38,8 @@ window.__ModuleLoader__.load({
       'dialog.balance': 'balance {amount}',
       'dialog.officialNote':
         'Provider totals include every client of this API key; the project rows cover this Harness only.',
+      'dialog.coverage':
+        'Showing the {considered} most recent sessions of {total} — raise maxSessions in the plugin config to cover every session.',
       'dialog.rates': '{model}: {hit} cache hit · {miss} cache miss · {out} output, per {unit} tokens. Off-peak ×{factor}.',
       'dialog.peak': 'Peak: weekdays {windows} UTC.',
     };
@@ -59,6 +61,8 @@ window.__ModuleLoader__.load({
       'dialog.balance': 'баланс {amount}',
       'dialog.officialNote':
         'Итоги платформы включают все клиенты этого API-ключа; строки проектов — только сессии этого Harness.',
+      'dialog.coverage':
+        'Учтены {considered} последних сессий из {total} — увеличьте maxSessions в настройках плагина, чтобы охватить все.',
       'dialog.rates': '{model}: кэш-хит {hit} · промах {miss} · вывод {out} за {unit} токенов. Вне пика ×{factor}.',
       'dialog.peak': 'Пик: по будням {windows} UTC.',
     };
@@ -266,7 +270,11 @@ window.__ModuleLoader__.load({
       }, [open, place]);
 
       if (state.status === 'error') return null;
-      if (data !== null && projects.length === 0 && period === 'today') return null;
+      const truncated =
+        data !== null && data.sessions !== undefined && data.sessions !== null && data.sessions.truncated === true;
+      // A truncated session window must never silently hide the pill: the real
+      // spend may live outside the covered sessions.
+      if (data !== null && projects.length === 0 && period === 'today' && !truncated) return null;
 
       const label =
         state.status === 'ready'
@@ -417,6 +425,18 @@ window.__ModuleLoader__.load({
                 ),
                 h('div', { className: 'dshApiSpendRule', 'aria-hidden': true }),
                 h('div', { className: 'dshApiSpendRows' }, rows),
+                truncated
+                  ? h(
+                      'div',
+                      { className: 'dshApiSpendNote' },
+                      translateWith(
+                        t,
+                        'dialog.coverage',
+                        { considered: data.sessions.considered, total: data.sessions.total },
+                        `Showing the ${data.sessions.considered} most recent sessions of ${data.sessions.total}.`,
+                      ),
+                    )
+                  : null,
                 official !== null && officialLines.length > 0
                   ? h(
                       'div',

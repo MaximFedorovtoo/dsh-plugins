@@ -51,18 +51,18 @@
     models:
       deepseek-flash: { cacheHit: 0.006, cacheMiss: 0.3, output: 1.2 }
       deepseek-v4-pro: { cacheHit: 0.044, cacheMiss: 1.32, output: 3.96 }
-    maxSessions: 400
+    maxSessions: 2000
     platformRefreshMs: 120000
 ```
 
 - `models` — ставки по идентификатору модели, который сообщает провайдер;
 - `defaultModel` — чья ставка берётся для неизвестной модели;
-- `maxSessions` — сколько последних сессий учитывать в отчёте;
+- `maxSessions` — сколько сессий охватывает отчёт (сначала живые, затем самые новые; по умолчанию 2000). Если сессий больше, диалог показывает, сколько из них учтено — увеличьте лимит, чтобы охватить остальные;
 - `platformRefreshMs` — как часто перечитывать официальные итоги.
 
 ## Установка
 
-Пакет `dsh-api-spend`, версия 1.1.0, DSH 0.2.x. Чистый JavaScript без
+Пакет `dsh-api-spend`, версия 1.1.1, DSH 0.2.x. Чистый JavaScript без
 зависимостей и сборки; работает на Windows, macOS и Linux. Способы установки —
 в инструкции репозитория: [INSTALL.md](../../INSTALL.md) (рус.) или
 [INSTALL.en.md](../../INSTALL.en.md) (англ.). Коротко:

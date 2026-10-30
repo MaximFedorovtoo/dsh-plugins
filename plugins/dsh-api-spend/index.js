@@ -112,7 +112,7 @@ function settingsOf(config) {
     maxSessions:
       typeof source.maxSessions === 'number' && Number.isSafeInteger(source.maxSessions) && source.maxSessions > 0
         ? source.maxSessions
-        : 400,
+        : 2000,
     platformRefreshMs: numberOr(source.platformRefreshMs, 120000),
   };
 }
@@ -344,7 +344,13 @@ export function apply(ctx, config) {
       for (const sessionId of workspace.sessionIds) workspaceBySession.set(sessionId, workspace);
     }
 
-    const ordered = [...records].sort((left, right) => right.header.createdAt - left.header.createdAt);
+    // Live sessions come first so an active chat is never pushed out by the
+    // cap; the rest are ordered newest-first. Imported histories can add
+    // hundreds of zero-usage sessions with fresh createdAt stamps, and a plain
+    // createdAt window would then hide every session that actually spent.
+    const ordered = [...records].sort(
+      (left, right) => Number(right.live === true) - Number(left.live === true) || right.header.createdAt - left.header.createdAt,
+    );
     const picked = ordered.slice(0, maxSessions);
 
     const projects = new Map();
@@ -404,6 +410,11 @@ export function apply(ctx, config) {
       estimated: false,
       priced: 'official-rates',
       currentProjectId,
+      sessions: {
+        total: records.length,
+        considered: picked.length,
+        truncated: picked.length < records.length,
+      },
       periods,
       rates: {
         unit,

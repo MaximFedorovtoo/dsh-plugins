@@ -1,6 +1,6 @@
 {
   "name": "dsh-api-spend",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "description": "API spend per project at the provider's official rates, shown below the composer beside the token counters, with a per-project breakdown and the platform's own totals.",
   "license": "MIT",

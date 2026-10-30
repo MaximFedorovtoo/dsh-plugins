@@ -50,18 +50,18 @@ Values live on the `api-spend` row in the profile's `cordis.patch.yml`:
     models:
       deepseek-flash: { cacheHit: 0.006, cacheMiss: 0.3, output: 1.2 }
       deepseek-v4-pro: { cacheHit: 0.044, cacheMiss: 1.32, output: 3.96 }
-    maxSessions: 400
+    maxSessions: 2000
     platformRefreshMs: 120000
 ```
 
 - `models` — rates by the model id the provider reports;
 - `defaultModel` — whose rate is used for an unknown model;
-- `maxSessions` — how many recent sessions the report covers;
+- `maxSessions` — how many sessions the report covers (live sessions first, then the newest; default 2000). When the store holds more, the dialog states how many sessions were considered — raise the cap to cover the rest;
 - `platformRefreshMs` — how often the official totals are re-read.
 
 ## Install
 
-Package `dsh-api-spend`, version 1.1.0, DSH 0.2.x. Plain JavaScript, no
+Package `dsh-api-spend`, version 1.1.1, DSH 0.2.x. Plain JavaScript, no
 dependencies, no build step, works on Windows, macOS and Linux. Installation
 methods are in the repository guide: [INSTALL.en.md](../../INSTALL.en.md)
 (English) or [INSTALL.md](../../INSTALL.md) (Russian). The short version:
