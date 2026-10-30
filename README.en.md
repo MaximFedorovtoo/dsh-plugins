@@ -1,6 +1,6 @@
 # DeepSeek Harness plugins: spend, screenshots, localization, Codex, instructions and portable projects
 
-Seven plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
+Eight plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 
 | Plugin | What it does | Runs on |
 |---|---|---|
@@ -11,6 +11,7 @@ Seven plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-har
 | [`dsh-agents-md`](plugins/dsh-agents-md) | Installs global `AGENTS.md` instructions into `DSH_HOME` so every session in every project loads them; an existing file is kept unless `overwrite` is enabled. | Windows, macOS, Linux |
 | [`dsh-instructions`](plugins/dsh-instructions) | An Instructions panel: upload a file, edit it and save it as `DSH_HOME/AGENTS.md` so the rules apply by default in every session. | Windows, macOS, Linux |
 | [`dsh-project-portability`](plugins/dsh-project-portability) | Exports a whole project into one `.dshpack` archive (files, every chat with its full history and context, attachments) and imports it on another computer so work continues in the same chats. | Windows, macOS, Linux |
+| [`dsh-voice-ru`](plugins/dsh-voice-ru) | Russian voice input: a "Voice" button in the composer input row (the old microphone spot) — local GigaAM recognition (CTC or e2e with punctuation) turns dictated theses into a coherent task with the project context and inserts it into the composer for review and manual sending. | Windows, macOS, Linux |
 
 All plugins are plain JavaScript with no dependencies and no build step. Installation is identical on every OS; the only platform limitation is screen capture in `dsh-screenshot` (see [platform support](#platform-support)).
 
@@ -141,7 +142,7 @@ dsh-plugins/
 └── INSTALL.en.md           # this guide's companion (English)
 ```
 
-All seven plugins live in this repository, each in its own folder under `plugins/`, with its own README and install guide.
+All eight plugins live in this repository, each in its own folder under `plugins/`, with its own README and install guide.
 
 ## License
 

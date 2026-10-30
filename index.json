@@ -1,299 +1,334 @@
 {
-  "format": 1,
-  "title": {
-    "en": "DSH plugins by MaximFedorovtoo",
-    "ru": "Плагины DSH от MaximFedorovtoo",
-    "zh": "MaximFedorovtoo 的 DSH 插件"
-  },
-  "description": {
-    "en": "DeepSeek Harness plugins by MaximFedorovtoo: API spend, screenshot input, Russian localization, Codex import, AGENTS.md instructions and portable projects.",
-    "ru": "Плагины DSH от MaximFedorovtoo: расходы на API, скриншоты как ввод, русская локализация, перенос из Codex, инструкции AGENTS.md и переносимые проекты.",
-    "zh": "MaximFedorovtoo 的 DSH 插件：API 花费、截图输入、俄语本地化、Codex 迁移、AGENTS.md 指令与可移植项目。"
-  },
-  "plugins": [
-    {
-      "name": "dsh-agents-md",
-      "title": {
-        "en": "AGENTS.md Instructions",
-        "ru": "Глобальные инструкции AGENTS.md",
-        "zh": "AGENTS.md 全局指令"
-      },
-      "description": {
-        "en": "Installs the author's global working rules as $DSH_HOME/AGENTS.md so every DSH session in every project loads them; an existing file is kept unless overwrite is enabled.",
-        "ru": "Кладёт глобальные инструкции автора в $DSH_HOME/AGENTS.md, чтобы они подгружались в каждую сессию любого проекта; существующий файл сохраняется, пока не включён overwrite.",
-        "zh": "将作者的全局工作规则安装为 $DSH_HOME/AGENTS.md，使每个项目的每个会话都会加载；默认保留已有文件。"
-      },
-      "icon": "icons/dsh-agents-md.svg",
-      "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-agents-md",
-      "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-        "directory": "plugins/dsh-agents-md"
-      },
-      "versions": [
-        {
-          "version": "1.0.0",
-          "publishTimestamp": 1793270077,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
-            "path": "plugins/dsh-agents-md"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        }
-      ]
-    },
-    {
-      "name": "dsh-api-spend",
-      "title": {
-        "en": "API Spend",
-        "ru": "Расходы на API",
-        "zh": "API 花费"
-      },
-      "description": {
-        "en": "Shows each project API spend at the provider official rates next to the token counters, with a per-project breakdown and the platform totals.",
-        "ru": "Показывает расходы на API по каждому проекту по официальным тарифам рядом со счётчиками токенов: разбивка по проектам и итоги платформы.",
-        "zh": "在令牌计数旁按官方价格显示每个项目的 API 花费，并提供项目明细与平台总计。"
-      },
-      "icon": "icons/dsh-api-spend.svg",
-      "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-api-spend",
-      "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-        "directory": "plugins/dsh-api-spend"
-      },
-      "versions": [
-        {
-          "version": "1.1.1",
-          "publishTimestamp": 1793353416,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "75c37c761b07c186ed43c70c2d0277998d713851",
-            "path": "plugins/dsh-api-spend"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        },
-        {
-          "version": "1.1.0",
-          "publishTimestamp": 1793182492,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
-            "path": "plugins/dsh-api-spend"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        }
-      ]
-    },
-    {
-      "name": "dsh-codex-bridge",
-      "title": {
-        "en": "Codex Bridge",
-        "ru": "Перенос из Codex",
-        "zh": "Codex 迁移"
-      },
-      "description": {
-        "en": "Imports projects and chat history from the OpenAI Codex app into DSH; the project stays in its original folder and repeat imports update the same workspace.",
-        "ru": "Переносит проекты и переписку из OpenAI Codex в DSH: проект остаётся в своей папке, повторный импорт обновляет ту же рабочую область.",
-        "zh": "将 OpenAI Codex 中的项目和聊天记录导入 DSH；项目保留在原文件夹，重复导入会更新同一个工作区。"
-      },
-      "icon": "icons/dsh-codex-bridge.svg",
-      "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-codex-bridge",
-      "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-        "directory": "plugins/dsh-codex-bridge"
-      },
-      "versions": [
-        {
-          "version": "1.2.1",
-          "publishTimestamp": 1793263422,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
-            "path": "plugins/dsh-codex-bridge"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        }
-      ]
-    },
-    {
-      "name": "dsh-instructions",
-      "title": {
-        "en": "Instructions Panel",
-        "ru": "Панель инструкций",
-        "zh": "指令面板"
-      },
-      "description": {
-        "en": "A sidebar panel that uploads, edits and saves the machine-wide instruction file $DSH_HOME/AGENTS.md, so uploaded rules apply by default in every DSH session.",
-        "ru": "Панель в боковом меню: загрузить, отредактировать и сохранить машинный файл инструкций $DSH_HOME/AGENTS.md — правила действуют по умолчанию во всех сессиях DSH.",
-        "zh": "侧边栏面板：上传、编辑并保存机器级指令文件 $DSH_HOME/AGENTS.md，上传的规则将在所有 DSH 会话中默认生效。"
-      },
-      "icon": "icons/dsh-instructions.svg",
-      "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-instructions",
-      "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-        "directory": "plugins/dsh-instructions"
-      },
-      "versions": [
-        {
-          "version": "1.0.0",
-          "publishTimestamp": 1793270318,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
-            "path": "plugins/dsh-instructions"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        }
-      ]
-    },
-    {
-      "name": "dsh-locale-ru",
-      "title": {
-        "en": "Russian Language Pack",
-        "ru": "Русская локализация",
-        "zh": "俄语语言包"
-      },
-      "description": {
-        "en": "Full Russian translation of the DSH web client: 64 namespaces, 2910 interface strings and 545 plugin titles/descriptions, registered through the public ctx.locale API.",
-        "ru": "Полный русский перевод веб-клиента DSH: 64 неймспейса, 2910 строк интерфейса и 545 названий/описаний плагинов через публичный API ctx.locale.",
-        "zh": "DSH Web 客户端的完整俄语翻译：64 个命名空间、2910 条界面字符串和 545 条插件标题/描述。"
-      },
-      "icon": "icons/dsh-locale-ru.svg",
-      "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-locale-ru",
-      "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-        "directory": "plugins/dsh-locale-ru"
-      },
-      "versions": [
-        {
-          "version": "0.1.0",
-          "publishTimestamp": 1793261175,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
-            "path": "plugins/dsh-locale-ru"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        }
-      ]
-    },
-    {
-      "name": "dsh-project-portability",
-      "title": {
-        "en": "Project Portability",
-        "ru": "Перенос проектов",
-        "zh": "项目迁移"
-      },
-      "description": {
-        "en": "Exports a whole DSH project into one .dshpack archive — files, every chat with its full history and context, and attachments — and imports it on another computer so work continues in the same chats.",
-        "ru": "Экспортирует проект DSH целиком в один архив .dshpack — файлы, все чаты с полной историей и контекстом, вложения — и импортирует его на другом компьютере: работа продолжается в тех же чатах.",
-        "zh": "将一个 DSH 项目完整导出为单个 .dshpack 归档（文件、全部会话历史与上下文、附件），并在另一台电脑上导入，继续在原会话中工作。"
-      },
-      "icon": "icons/dsh-project-portability.svg",
-      "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-project-portability",
-      "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-        "directory": "plugins/dsh-project-portability"
-      },
-      "versions": [
-        {
-          "version": "1.0.1",
-          "publishTimestamp": 1793352375,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "af414846df937deccce6bb73bbba4dcc1bbe9905",
-            "path": "plugins/dsh-project-portability"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        },
-        {
-          "version": "1.0.0",
-          "publishTimestamp": 1793350896,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "e2556e73a691b6e314cd16f33177a48b5aa143ff",
-            "path": "plugins/dsh-project-portability"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        },
-        {
-          "version": "0.1.0",
-          "publishTimestamp": 1793350742,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "76fdc672c67bc52420c6212a63b883e6ab9ab661",
-            "path": "plugins/dsh-project-portability"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        }
-      ]
-    },
-    {
-      "name": "dsh-screenshot",
-      "title": {
-        "en": "Screenshot Input",
-        "ru": "Скриншоты как ввод",
-        "zh": "截图输入"
-      },
-      "description": {
-        "en": "Composer screenshot button, click-to-edit attachment rail with a pen/arrow/rectangle/text annotation editor, screen and clipboard capture tools, and a reading protocol for annotated screenshots.",
-        "ru": "Кнопка скриншота в поле ввода, редактор разметки во вложениях (кисть, стрелка, рамка, текст), инструменты захвата экрана и буфера, протокол чтения размеченных скриншотов.",
-        "zh": "输入框截图按钮、带画笔/箭头/矩形/文字标注的附件编辑器、屏幕与剪贴板抓取工具，以及标注截图的阅读协议。"
-      },
-      "icon": "icons/dsh-screenshot.svg",
-      "author": "Maxim Fedorov (MaximFedorovtoo)",
-      "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-screenshot",
-      "repository": {
-        "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-        "directory": "plugins/dsh-screenshot"
-      },
-      "versions": [
-        {
-          "version": "1.4.0",
-          "publishTimestamp": 1793182492,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
-            "commit": "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
-            "path": "plugins/dsh-screenshot"
-          },
-          "engines": {
-            "dsh": ">=0.2.0 <0.3.0"
-          }
-        }
-      ]
-    }
-  ]
+    "format":  1,
+    "title":  {
+                  "en":  "DSH plugins by MaximFedorovtoo",
+                  "ru":  "Плагины DSH от MaximFedorovtoo",
+                  "zh":  "MaximFedorovtoo 的 DSH 插件"
+              },
+    "description":  {
+                        "en":  "DeepSeek Harness plugins by MaximFedorovtoo: API spend, screenshot input, Russian localization, Codex import, AGENTS.md instructions and portable projects.",
+                        "ru":  "Плагины DSH от MaximFedorovtoo: расходы на API, скриншоты как ввод, русская локализация, перенос из Codex, инструкции AGENTS.md и переносимые проекты.",
+                        "zh":  "MaximFedorovtoo 的 DSH 插件：API 花费、截图输入、俄语本地化、Codex 迁移、AGENTS.md 指令与可移植项目。"
+                    },
+    "plugins":  [
+                    {
+                        "name":  "dsh-agents-md",
+                        "title":  {
+                                      "en":  "AGENTS.md Instructions",
+                                      "ru":  "Глобальные инструкции AGENTS.md",
+                                      "zh":  "AGENTS.md 全局指令"
+                                  },
+                        "description":  {
+                                            "en":  "Installs the author\u0027s global working rules as $DSH_HOME/AGENTS.md so every DSH session in every project loads them; an existing file is kept unless overwrite is enabled.",
+                                            "ru":  "Кладёт глобальные инструкции автора в $DSH_HOME/AGENTS.md, чтобы они подгружались в каждую сессию любого проекта; существующий файл сохраняется, пока не включён overwrite.",
+                                            "zh":  "将作者的全局工作规则安装为 $DSH_HOME/AGENTS.md，使每个项目的每个会话都会加载；默认保留已有文件。"
+                                        },
+                        "icon":  "icons/dsh-agents-md.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-agents-md",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-agents-md"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "1.0.0",
+                                             "publishTimestamp":  1793270077,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
+                                                            "path":  "plugins/dsh-agents-md"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
+                    },
+                    {
+                        "name":  "dsh-api-spend",
+                        "title":  {
+                                      "en":  "API Spend",
+                                      "ru":  "Расходы на API",
+                                      "zh":  "API 花费"
+                                  },
+                        "description":  {
+                                            "en":  "Shows each project API spend at the provider official rates next to the token counters, with a per-project breakdown and the platform totals.",
+                                            "ru":  "Показывает расходы на API по каждому проекту по официальным тарифам рядом со счётчиками токенов: разбивка по проектам и итоги платформы.",
+                                            "zh":  "在令牌计数旁按官方价格显示每个项目的 API 花费，并提供项目明细与平台总计。"
+                                        },
+                        "icon":  "icons/dsh-api-spend.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-api-spend",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-api-spend"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "1.1.1",
+                                             "publishTimestamp":  1793353416,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "75c37c761b07c186ed43c70c2d0277998d713851",
+                                                            "path":  "plugins/dsh-api-spend"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         },
+                                         {
+                                             "version":  "1.1.0",
+                                             "publishTimestamp":  1793182492,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
+                                                            "path":  "plugins/dsh-api-spend"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
+                    },
+                    {
+                        "name":  "dsh-codex-bridge",
+                        "title":  {
+                                      "en":  "Codex Bridge",
+                                      "ru":  "Перенос из Codex",
+                                      "zh":  "Codex 迁移"
+                                  },
+                        "description":  {
+                                            "en":  "Imports projects and chat history from the OpenAI Codex app into DSH; the project stays in its original folder and repeat imports update the same workspace.",
+                                            "ru":  "Переносит проекты и переписку из OpenAI Codex в DSH: проект остаётся в своей папке, повторный импорт обновляет ту же рабочую область.",
+                                            "zh":  "将 OpenAI Codex 中的项目和聊天记录导入 DSH；项目保留在原文件夹，重复导入会更新同一个工作区。"
+                                        },
+                        "icon":  "icons/dsh-codex-bridge.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-codex-bridge",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-codex-bridge"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "1.2.1",
+                                             "publishTimestamp":  1793263422,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
+                                                            "path":  "plugins/dsh-codex-bridge"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
+                    },
+                    {
+                        "name":  "dsh-instructions",
+                        "title":  {
+                                      "en":  "Instructions Panel",
+                                      "ru":  "Панель инструкций",
+                                      "zh":  "指令面板"
+                                  },
+                        "description":  {
+                                            "en":  "A sidebar panel that uploads, edits and saves the machine-wide instruction file $DSH_HOME/AGENTS.md, so uploaded rules apply by default in every DSH session.",
+                                            "ru":  "Панель в боковом меню: загрузить, отредактировать и сохранить машинный файл инструкций $DSH_HOME/AGENTS.md — правила действуют по умолчанию во всех сессиях DSH.",
+                                            "zh":  "侧边栏面板：上传、编辑并保存机器级指令文件 $DSH_HOME/AGENTS.md，上传的规则将在所有 DSH 会话中默认生效。"
+                                        },
+                        "icon":  "icons/dsh-instructions.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-instructions",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-instructions"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "1.0.0",
+                                             "publishTimestamp":  1793270318,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
+                                                            "path":  "plugins/dsh-instructions"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
+                    },
+                    {
+                        "name":  "dsh-locale-ru",
+                        "title":  {
+                                      "en":  "Russian Language Pack",
+                                      "ru":  "Русская локализация",
+                                      "zh":  "俄语语言包"
+                                  },
+                        "description":  {
+                                            "en":  "Full Russian translation of the DSH web client: 64 namespaces, 2910 interface strings and 545 plugin titles/descriptions, registered through the public ctx.locale API.",
+                                            "ru":  "Полный русский перевод веб-клиента DSH: 64 неймспейса, 2910 строк интерфейса и 545 названий/описаний плагинов через публичный API ctx.locale.",
+                                            "zh":  "DSH Web 客户端的完整俄语翻译：64 个命名空间、2910 条界面字符串和 545 条插件标题/描述。"
+                                        },
+                        "icon":  "icons/dsh-locale-ru.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-locale-ru",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-locale-ru"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "0.1.0",
+                                             "publishTimestamp":  1793261175,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
+                                                            "path":  "plugins/dsh-locale-ru"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
+                    },
+                    {
+                        "name":  "dsh-project-portability",
+                        "title":  {
+                                      "en":  "Project Portability",
+                                      "ru":  "Перенос проектов",
+                                      "zh":  "项目迁移"
+                                  },
+                        "description":  {
+                                            "en":  "Exports a whole DSH project into one .dshpack archive — files, every chat with its full history and context, and attachments — and imports it on another computer so work continues in the same chats.",
+                                            "ru":  "Экспортирует проект DSH целиком в один архив .dshpack — файлы, все чаты с полной историей и контекстом, вложения — и импортирует его на другом компьютере: работа продолжается в тех же чатах.",
+                                            "zh":  "将一个 DSH 项目完整导出为单个 .dshpack 归档（文件、全部会话历史与上下文、附件），并在另一台电脑上导入，继续在原会话中工作。"
+                                        },
+                        "icon":  "icons/dsh-project-portability.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-project-portability",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-project-portability"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "1.0.1",
+                                             "publishTimestamp":  1793352375,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "af414846df937deccce6bb73bbba4dcc1bbe9905",
+                                                            "path":  "plugins/dsh-project-portability"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         },
+                                         {
+                                             "version":  "1.0.0",
+                                             "publishTimestamp":  1793350896,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "e2556e73a691b6e314cd16f33177a48b5aa143ff",
+                                                            "path":  "plugins/dsh-project-portability"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         },
+                                         {
+                                             "version":  "0.1.0",
+                                             "publishTimestamp":  1793350742,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "76fdc672c67bc52420c6212a63b883e6ab9ab661",
+                                                            "path":  "plugins/dsh-project-portability"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
+                    },
+                    {
+                        "name":  "dsh-screenshot",
+                        "title":  {
+                                      "en":  "Screenshot Input",
+                                      "ru":  "Скриншоты как ввод",
+                                      "zh":  "截图输入"
+                                  },
+                        "description":  {
+                                            "en":  "Composer screenshot button, click-to-edit attachment rail with a pen/arrow/rectangle/text annotation editor, screen and clipboard capture tools, and a reading protocol for annotated screenshots.",
+                                            "ru":  "Кнопка скриншота в поле ввода, редактор разметки во вложениях (кисть, стрелка, рамка, текст), инструменты захвата экрана и буфера, протокол чтения размеченных скриншотов.",
+                                            "zh":  "输入框截图按钮、带画笔/箭头/矩形/文字标注的附件编辑器、屏幕与剪贴板抓取工具，以及标注截图的阅读协议。"
+                                        },
+                        "icon":  "icons/dsh-screenshot.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-screenshot",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-screenshot"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "1.4.0",
+                                             "publishTimestamp":  1793182492,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "2c92aef76d33a227b1895bd59d3cc94986e3a2d3",
+                                                            "path":  "plugins/dsh-screenshot"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
+                    },
+                    {
+                        "name":  "dsh-voice-ru",
+                        "title":  {
+                                      "en":  "Russian Voice Input",
+                                      "ru":  "Русский голосовой ввод",
+                                      "zh":  "俄语语音输入"
+                                  },
+                        "description":  {
+                                            "en":  "One microphone button in the composer input row: dictate Russian theses, get a coherent task shaped with the project context, review it and send it yourself. Local GigaAM (CTC by default, optional e2e with punctuation).",
+                                            "ru":  "Одна кнопка-микрофон в строке ввода: надиктуйте русские тезисы — получите связную задачу с учётом контекста проекта, проверьте и отправьте сами. Локальный GigaAM (CTC по умолчанию, опционально e2e с пунктуацией).",
+                                            "zh":  "输入行中的一个麦克风按钮：口述俄语要点，结合项目上下文生成连贯任务，审阅后自行发送。本地 GigaAM（默认 CTC，可选带标点的 e2e）。"
+                                        },
+                        "icon":  "icons/dsh-voice-ru.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-voice-ru",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-voice-ru"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "0.1.0",
+                                             "publishTimestamp":  1793357447,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "fc5fbef749ea9c51666e63bc14292563799c7d97",
+                                                            "path":  "/plugins/dsh-voice-ru"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
+                    }
+                ]
 }

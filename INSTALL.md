@@ -283,3 +283,25 @@ dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit
 сохраняются. Недоступные для чтения каталоги и файлы (например, с запрещающим
 ACL) пропускаются с предупреждением: остальной проект копируется, в архиве этих
 записей не будет. Неудачный экспорт не оставляет недописанный `.dshpack`.
+
+
+## 11. Русский голосовой ввод (`dsh-voice-ru`)
+
+Кнопка **«Голосом»** в строке ввода (на месте прежнего встроенного микрофона):
+надиктуйте тезисы, после паузы запись остановится, речь распознается локально
+(GigaAM), тезисы превращаются в связную задачу с контекстом проекта и
+вставляются в поле — вы её проверяете и отправляете сами.
+
+```powershell
+dsh plugin --profile desktop add https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-voice-ru
+dsh plugin --profile desktop add sherpa-onnx-node
+```
+
+Затем перезапустите DSH. Чтобы осталась одна кнопка-микрофон, уберите встроенный
+bundle `@deepseek-ai/dsh-experimental-voice-input-bundle` из `dsh.profile.bundles`
+в `%USERPROFILE%\.dsh\profiles\desktop\package.json`.
+
+Модель CTC (~214 МБ) скачивается при первой диктовке в
+`%USERPROFILE%\.dsh\speech-to-text\gigaam`. Опциональный движок `e2e` (с
+пунктуацией) требует Python/PyTorch — подробности в
+[`plugins/dsh-voice-ru/INSTALL.md`](plugins/dsh-voice-ru/INSTALL.md).
