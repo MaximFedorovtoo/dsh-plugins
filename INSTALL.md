@@ -30,7 +30,7 @@
    https://raw.githubusercontent.com/MaximFedorovtoo/dsh-plugins/main/index.json
    ```
 
-4. В списке появятся два плагина: **API Spend** и **Screenshot Input**. Нажмите **Install** у нужного, подтвердите версию и источник.
+4. В списке появятся карточки всех плагинов репозитория (например, **API Spend**, **Screenshot Input**, **Project Portability**). Нажмите **Install** у нужного, подтвердите версию и источник.
 5. Дождитесь окончания установки и нажмите **Enable now** (или включите переключатель на карточке в **Installed**).
 
 Индекс — обычный JSON-файл, его можно открыть в браузере и проверить: [index.json](https://raw.githubusercontent.com/MaximFedorovtoo/dsh-plugins/main/index.json). Источник ставится один раз и обновляется сам: новые версии появятся в Discover, когда они будут в индексе.
@@ -227,4 +227,56 @@ dsh --profile desktop --dump-config | grep -i -E 'screenshot|api-spend'
 }
 ```
 
-Строки плагинов (`api-spend`, `screenshot`) добавляет слой `cordis.patch.yml` самого пакета. Свои правки конфигурации держите в `cordis.patch.yml` профиля — установка пакета их не перезапишет.
+Строки плагинов (`api-spend`, `screenshot`, `project-portability`) добавляет слой `cordis.patch.yml` самого пакета. Свои правки конфигурации держите в `cordis.patch.yml` профиля — установка пакета их не перезапишет.
+
+---
+
+## 10. Перенос проектов (`dsh-project-portability`)
+
+Плагин выгружает проект DSH целиком в **один файл `.dshpack`** и восстанавливает
+его на другом компьютере: файлы проекта, все чаты с полной историей и
+контекстом, вложения. После импорта проект появляется в сайдбаре как рабочая
+область, а чаты открываются и продолжаются как обычно.
+
+**Установка.**
+
+```powershell
+dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit>&path:/plugins/dsh-project-portability"
+```
+
+Или локальная папка: `dsh plugin --profile desktop add C:\путь\dsh-plugins\plugins\dsh-project-portability`.
+После установки — `Ctrl+R` (или перезапуск приложения).
+
+**Проверка.** В сайдбаре появляется страница **«Перенос проектов»**; у модели
+есть инструменты `project_list`, `project_export`, `project_import`.
+
+**Как перенести проект на другой компьютер:**
+
+1. Экспорт: кнопка **Экспортировать** у проекта или инструмент `project_export`.
+   Архив по умолчанию ложится в `%USERPROFILE%\.dsh\exports\<проект>-<дата>.dshpack`.
+2. Скопируйте `.dshpack` на внешний диск / флешку.
+3. На другом компьютере установите DSH и этот плагин.
+4. Импорт: `project_import` или блок **Импорт архива** в панели. Без `targetDir`
+   проект развернётся в исходный путь, если он свободен, иначе рядом с суффиксом
+   `-2`; путь можно задать явно.
+5. Нажмите `Ctrl+R` — проект и все чаты на месте.
+
+**Настройка** — строка плагина в `cordis.patch.yml` профиля:
+
+```yaml
+- id: project-portability
+  config:
+    archiveDir: ''            # по умолчанию <DSH_HOME>/exports
+    excludeNames: ['.dsh-portability.tmp']
+    includeSessions: true
+    includeAttachments: true
+```
+
+Если проект большой, добавьте в `excludeNames` `node_modules`, `.venv`,
+`__pycache__`, `dist` — архив станет меньше, но зависимости придётся
+восстановить на целевой машине.
+
+**Ограничения.** Spill-файлы (временные выгрузки очень длинных выводов
+инструментов) не переносятся; абсолютные пути вне корня проекта не
+переписываются; импорт создаёт новые id сессий — история и заголовки при этом
+сохраняются.
