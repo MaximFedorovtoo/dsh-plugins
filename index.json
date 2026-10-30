@@ -207,6 +207,19 @@
       },
       "versions": [
         {
+          "version": "1.0.1",
+          "publishTimestamp": 1793352375,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/MaximFedorovtoo/dsh-plugins",
+            "commit": "af414846df937deccce6bb73bbba4dcc1bbe9905",
+            "path": "/plugins/dsh-project-portability"
+          },
+          "engines": {
+            "dsh": ">=0.2.0 <0.3.0"
+          }
+        },
+        {
           "version": "1.0.0",
           "publishTimestamp": 1793350896,
           "source": {
