@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Project portability",
+    "description": "Exports a whole project as one .dshpack archive and imports it on another computer: files, every chat with its history, and attachments, so work continues in the same chats."
+  }
+}

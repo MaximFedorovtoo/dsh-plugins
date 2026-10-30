@@ -1,0 +1,23 @@
+# Plugin rows for dsh-project-portability.
+#
+# Exports a project (workspace) as one portable .dshpack archive that contains
+# the project files, every chat of the project with its full event log, and the
+# attachments/spill blobs those chats reference. Importing the archive on
+# another computer recreates the project folder, registers the workspace and
+# rebuilds the chats so they open and continue normally.
+- insert:
+    - id: project-portability
+      name: dsh-project-portability
+      config:
+        # Where .dshpack archives are written. Empty = <DSH_HOME>/exports.
+        archiveDir: ""
+        # Directory/file names skipped while packing the project tree.
+        # Empty by default: the archive is a full copy of the project. Add
+        # "node_modules", ".venv", "__pycache__" here if size matters more than
+        # carrying dependency caches across machines.
+        excludeNames:
+          - .dsh-portability.tmp
+        # Copy chats (sessions) into the archive.
+        includeSessions: true
+        # Copy attachment/spill blobs referenced by the chats.
+        includeAttachments: true

@@ -1,6 +1,6 @@
-# Плагины для DeepSeek Harness: расходы, скриншоты, локализация, Codex и инструкции
+# Плагины для DeepSeek Harness: расходы, скриншоты, локализация, Codex, инструкции и перенос проектов
 
-Шесть плагинов для [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
+Семь плагинов для [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 
 | Плагин | Что делает | Где работает |
 |---|---|---|
@@ -10,6 +10,7 @@
 | [`dsh-codex-bridge`](plugins/dsh-codex-bridge) | Переносит проекты и переписку из OpenAI Codex в DSH: проект остаётся в своей папке, чат продолжается в DSH. | Windows, macOS, Linux |
 | [`dsh-agents-md`](plugins/dsh-agents-md) | Кладёт глобальные инструкции `AGENTS.md` в `DSH_HOME`, чтобы они подгружались в каждую сессию любого проекта. Существующий файл не перезаписывается без явного `overwrite`. | Windows, macOS, Linux |
 | [`dsh-instructions`](plugins/dsh-instructions) | Панель «Инструкции»: загрузить файл, отредактировать и сохранить как `DSH_HOME/AGENTS.md` — правила действуют по умолчанию во всех сессиях. | Windows, macOS, Linux |
+| [`dsh-project-portability`](plugins/dsh-project-portability) | Экспорт проекта целиком в один архив `.dshpack` (файлы, все чаты с полной историей и контекстом, вложения) и импорт на другом компьютере — работа продолжается в тех же чатах. | Windows, macOS, Linux |
 
 Все плагины — чистый JavaScript без зависимостей и без этапа сборки. Устанавливаются одинаково на всех ОС; ограничение по платформам касается только захвата экрана в `dsh-screenshot` (см. [совместимость](#совместимость-по-платформам)).
 
@@ -71,6 +72,7 @@ dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit
 | `dsh-api-spend`: пилюля расходов, разбивка, итоги платформы | да | да | да |
 | `dsh-screenshot`: кнопка в поле ввода, буфер обмена, выбор файла, редактор разметки, drag-and-drop | да | да | да |
 | `dsh-screenshot`: инструменты агента `screenshot` и `zoom_image` (снимок экрана/буфера, увеличение участка) | да | нет | нет |
+| `dsh-project-portability`: экспорт в `.dshpack`, импорт и продолжение чатов | да | да | да |
 
 Почему так: захват экрана и буфера в `dsh-screenshot` сделан через Windows PowerShell 5.1 и `System.Drawing`/WPF, потому что хост DSH — это обычный Node без API захвата Electron. На macOS и Linux эти два инструмента возвращают явную ошибку «нужен Windows PowerShell», а остальная часть плагина (кнопка, редактор, отправка картинки вложения) продолжает работать. Порт захвата на macOS (`screencapture`) и Linux (`grim`/`gnome-screenshot` + ImageMagick) — очевидный следующий шаг; в этой версии его нет.
 
@@ -78,6 +80,7 @@ dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit
 
 - **`dsh-api-spend`** (`api-spend`) — хост-часть читает журналы сессий через `ctx.sessionQuery`, умножает токены на официальные тарифы DeepSeek с учётом пиковых/внепиковых часов и складывает по проектам; клиент-часть рисует пилюлю в строке под полем ввода и диалог разбивки. Тарифы, валюта, окна пика и лимит сессий настраиваются в строке плагина.
 - **`dsh-screenshot`** (`screenshot`) — хост-часть регистрирует инструменты `screenshot` и `zoom_image` и раздел системного промпта «How to read a screenshot»; клиент-часть заменяет рейл вложений на версию с редактором разметки и добавляет кнопку захвата в поле ввода.
+- **`dsh-project-portability`** (`project-portability`) — хост-часть читает дерево проекта, полные логи сессий через `ctx.sessionQuery`/`ctx.sessionPersistence` и контентно-адресные вложения, пишет один `.dshpack`; при импорте создаёт новые durable-сессии с переписанным `cwd`, проверяет их холодным чтением и привязывает к рабочей области. Инструменты `project_list`, `project_export`, `project_import`; клиент-часть — страница «Перенос проектов» в сайдбаре.
 
 ## Настройка
 
@@ -113,6 +116,17 @@ dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit
     maxZoomScale: 4
 ```
 
+`dsh-project-portability`:
+
+```yaml
+- id: project-portability
+  config:
+    archiveDir: ''            # по умолчанию <DSH_HOME>/exports
+    excludeNames: ['.dsh-portability.tmp']
+    includeSessions: true
+    includeAttachments: true
+```
+
 Ставки в тарифах — за 1 млн токенов в часы пик; вне пика применяется `offPeakFactor`. Итоги платформы в диалоге показывают расходы **всех** клиентов API-ключа, поэтому они больше суммы по проектам — это нормально, для сверки так и задумано.
 
 ## Структура репозитория
@@ -125,14 +139,15 @@ dsh-plugins/
 │   ├── dsh-locale-ru/      # пакет dsh-locale-ru (русская локализация)
 │   ├── dsh-codex-bridge/   # пакет dsh-codex-bridge (перенос из Codex)
 │   ├── dsh-agents-md/      # пакет dsh-agents-md (глобальные инструкции AGENTS.md)
-│   └── dsh-instructions/   # пакет dsh-instructions (панель загрузки инструкций)
+│   ├── dsh-instructions/   # пакет dsh-instructions (панель загрузки инструкций)
+│   └── dsh-project-portability/ # пакет dsh-project-portability (перенос проектов)
 ├── icons/                  # иконки для индекса Discover
 ├── index.json              # индекс для вкладки Discover
 ├── INSTALL.md              # инструкция по установке (рус.)
 └── INSTALL.en.md           # installation guide (English)
 ```
 
-Все четыре плагина живут в этом репозитории; у каждого своя папка в `plugins/`, свои README и инструкция по установке.
+Все семь плагинов живут в этом репозитории; у каждого своя папка в `plugins/`, свои README и инструкция по установке.
 
 ## Лицензия
 

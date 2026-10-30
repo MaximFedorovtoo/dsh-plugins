@@ -1,6 +1,6 @@
-# DeepSeek Harness plugins: spend, screenshots, localization, Codex and instructions
+# DeepSeek Harness plugins: spend, screenshots, localization, Codex, instructions and portable projects
 
-Six plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
+Seven plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 
 | Plugin | What it does | Runs on |
 |---|---|---|
@@ -10,6 +10,7 @@ Six plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harne
 | [`dsh-codex-bridge`](plugins/dsh-codex-bridge) | Imports projects and chat history from the OpenAI Codex app into DSH: the project stays in its own folder and the chat continues in DSH. | Windows, macOS, Linux |
 | [`dsh-agents-md`](plugins/dsh-agents-md) | Installs global `AGENTS.md` instructions into `DSH_HOME` so every session in every project loads them; an existing file is kept unless `overwrite` is enabled. | Windows, macOS, Linux |
 | [`dsh-instructions`](plugins/dsh-instructions) | An Instructions panel: upload a file, edit it and save it as `DSH_HOME/AGENTS.md` so the rules apply by default in every session. | Windows, macOS, Linux |
+| [`dsh-project-portability`](plugins/dsh-project-portability) | Exports a whole project into one `.dshpack` archive (files, every chat with its full history and context, attachments) and imports it on another computer so work continues in the same chats. | Windows, macOS, Linux |
 
 All plugins are plain JavaScript with no dependencies and no build step. Installation is identical on every OS; the only platform limitation is screen capture in `dsh-screenshot` (see [platform support](#platform-support)).
 
@@ -71,6 +72,7 @@ After installing, switch the bundle on: **Plugins → Installed** → toggle it,
 | `dsh-api-spend`: spend pill, breakdown, platform totals | yes | yes | yes |
 | `dsh-screenshot`: composer button, clipboard, file picker, annotation editor, drag and drop | yes | yes | yes |
 | `dsh-screenshot`: agent tools `screenshot` and `zoom_image` (capture the screen or clipboard, zoom a region) | yes | no | no |
+| `dsh-project-portability`: export to `.dshpack`, import and continue the chats | yes | yes | yes |
 
 Screen and clipboard capture uses Windows PowerShell 5.1 with `System.Drawing`/WPF, because the DSH host is plain Node where no Electron capture API exists. On macOS and Linux those two tools return an explicit error, while the rest of the plugin (button, editor, image attachments) keeps working. Porting capture to macOS (`screencapture`) and Linux (`grim`/`gnome-screenshot` plus ImageMagick) is the obvious next step; this version does not do it.
 
@@ -108,6 +110,17 @@ Both rows are configured in the profile's `cordis.patch.yml` (`~/.dsh/profiles/<
     maxZoomScale: 4
 ```
 
+`dsh-project-portability`:
+
+```yaml
+- id: project-portability
+  config:
+    archiveDir: ''            # default: <DSH_HOME>/exports
+    excludeNames: ['.dsh-portability.tmp']
+    includeSessions: true
+    includeAttachments: true
+```
+
 Rates are USD per million tokens at peak hours; off-peak applies `offPeakFactor`. The platform totals include every client of the API key, so they are larger than the per-project sum by design.
 
 ## Repository layout
@@ -120,14 +133,15 @@ dsh-plugins/
 │   ├── dsh-locale-ru/      # package dsh-locale-ru (Russian localization)
 │   ├── dsh-codex-bridge/   # package dsh-codex-bridge (Codex import)
 │   ├── dsh-agents-md/      # package dsh-agents-md (global AGENTS.md instructions)
-│   └── dsh-instructions/   # package dsh-instructions (instruction upload panel)
+│   ├── dsh-instructions/   # package dsh-instructions (instruction upload panel)
+│   └── dsh-project-portability/ # package dsh-project-portability (portable projects)
 ├── icons/                  # icons for the Discover index
 ├── index.json              # plugin index for the Discover tab
 ├── INSTALL.md              # installation guide (Russian)
 └── INSTALL.en.md           # this guide's companion (English)
 ```
 
-All four plugins live in this repository, each in its own folder under `plugins/`, with its own README and install guide.
+All seven plugins live in this repository, each in its own folder under `plugins/`, with its own README and install guide.
 
 ## License
 
