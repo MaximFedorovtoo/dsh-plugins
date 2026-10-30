@@ -1,0 +1,61 @@
+{
+  "name": "dsh-voice-ru",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Russian voice input for DeepSeek Harness: one microphone button that records a dictation, turns the theses into a coherent task with the project context, and puts it in the composer for review before sending.",
+  "license": "MIT",
+  "author": "Maxim Fedorov (Winkerok) <https://github.com/MaximFedorovtoo>",
+  "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-voice-ru",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaximFedorovtoo/dsh-plugins.git",
+    "directory": "plugins/dsh-voice-ru"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "voice",
+    "speech",
+    "asr",
+    "russian",
+    "gigaam"
+  ],
+  "engines": {
+    "dsh": ">=0.2.0 <0.3.0"
+  },
+  "dependencies": {
+    "sherpa-onnx-node": "^2.0.1"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "worker.cjs",
+    "worker_e2e.py",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.ru.md",
+    "INSTALL.md",
+    "INSTALL.en.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}

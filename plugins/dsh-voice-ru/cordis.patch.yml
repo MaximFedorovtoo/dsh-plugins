@@ -1,0 +1,39 @@
+# Russian voice input for DSH.
+#
+# Registers a local GigaAM speech-to-text provider ('gigaam-ru') that the
+# built-in voice-input UI can select, and adds a one-click task builder that
+# turns the current draft into a structured task using the project context.
+- insert:
+    - id: voice-ru
+      name: dsh-voice-ru
+      config:
+        # '' = <DSH_HOME>/speech-to-text/gigaam
+        dataRoot: ""
+        # Existing absolute model directory (model.int8.onnx + tokens.txt);
+        # '' downloads the model into dataRoot on demand.
+        modelDirectory: ""
+        providerId: gigaam-ru
+        threads: 2
+        # 'ctc' — fast sherpa-onnx model (no punctuation, 214 MB);
+        # 'e2e' — GigaAM-v3 e2e via Python/PyTorch (punctuation and
+        # normalization, ~2.5 GB env/cache, slower on CPU).
+        engine: ctc
+        # Python from the e2e environment; '' = <DSH_HOME>/speech-to-text/gigaam-e2e/venv
+        e2ePython: ""
+        # HF cache for the e2e model; must be an ASCII-only path on Windows
+        # (sentencepiece cannot open tokenizer.model under a Cyrillic path).
+        e2eHfHome: ""
+        e2eModel: ai-sage/GigaAM-v3
+        e2eRevision: e2e_rnnt
+        # Model download origins, tried in order.
+        modelOrigins:
+          - https://huggingface.co
+          - https://hf-mirror.com
+        # LLM route used to turn dictated theses into a task.
+        llmProvider: deepseek-account
+        llmModel: deepseek-flash
+        maxTokens: 1200
+        # How many recent chat messages to use as project context.
+        contextMessages: 8
+        # Expose the STT self-test tool (diagnostics only).
+        enableDebug: false

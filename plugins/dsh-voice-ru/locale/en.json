@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Russian voice input",
+    "description": "Local Russian speech recognition (GigaAM) for the composer and a “Make task” action that shapes dictated theses into a structured task using the project context."
+  }
+}
