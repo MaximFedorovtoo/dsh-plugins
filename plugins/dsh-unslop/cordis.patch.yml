@@ -1,0 +1,17 @@
+# unslop for DSH: deterministic AI-writing scanners + preservation gates +
+# an LLM rewrite that must keep facts and do no harm.
+- insert:
+    - id: unslop
+      name: dsh-unslop
+      config:
+        # '' = DSH bundled Python (resources/runtime/.../dependencies/python)
+        pythonPath: ""
+        # '' = <plugin>/python/scripts
+        scriptsRoot: ""
+        timeoutMs: 60000
+        maxInputChars: 40000
+        maxOutputChars: 40000
+        # LLM route used by unslop_rewrite
+        llmProvider: deepseek-account
+        llmModel: deepseek-flash
+        maxTokens: 4000
