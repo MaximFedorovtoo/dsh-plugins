@@ -14,13 +14,13 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 
 /** Plugin row name in `cordis.patch.yml`. */
 export const name = 'ruflo';
 /** Host services this plugin uses. */
-export const inject = ['tools'];
+export const inject = ['tools', 'connection'];
 
 /** Commands the raw escape hatch may run (init/cleanup/update/plugins/daemon/mcp are excluded). */
 const RAW_COMMANDS = [
@@ -87,7 +87,8 @@ function resolveConfig(raw) {
     // Executor bridge: Ruflo has no DeepSeek runtime of its own, so tasks are
     // executed by a DSH subagent (DeepSeek model) spawned through ctx.subagents.
     subagentProvider: typeof source.subagentProvider === 'string' && source.subagentProvider !== '' ? source.subagentProvider : 'spawn',
-    executeMaxDepth: Number.isSafeInteger(source.executeMaxDepth) && source.executeMaxDepth >= 0 ? source.executeMaxDepth : 0,
+    executeMaxDepth: Number.isSafeInteger(source.executeMaxDepth) && source.executeMaxDepth >= 0 ? source.executeMaxDepth : 1,
+    executeTimeoutMs: Number.isSafeInteger(source.executeTimeoutMs) && source.executeTimeoutMs > 0 ? source.executeTimeoutMs : 600000,
   };
 }
 
@@ -172,6 +173,104 @@ function extractJson(text) {
   return best;
 }
 
+/** DeepSeek-only executor settings, entered through the plugin UI. */
+function settingsPath() {
+  return join(dshHome(), 'ruflo', 'settings.json');
+}
+
+/** Default settings: DeepSeek official endpoint only. */
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
+const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];
+
+/** @param {object} config - plugin config. @returns {Promise<object>} settings. */
+async function loadSettings(config) {
+  const fallback = { baseUrl: DEEPSEEK_BASE_URL, model: 'deepseek-chat', apiKey: '', verifiedAt: null, lastError: null };
+  try {
+    const parsed = JSON.parse(await readFile(settingsPath(), 'utf8'));
+    return {
+      ...fallback,
+      ...parsed,
+      baseUrl: typeof parsed.baseUrl === 'string' && parsed.baseUrl !== '' ? parsed.baseUrl : fallback.baseUrl,
+      model: typeof parsed.model === 'string' && parsed.model !== '' ? parsed.model : fallback.model,
+      apiKey: typeof parsed.apiKey === 'string' ? parsed.apiKey : '',
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Save a settings patch. The key is only written when supplied; `clearKey`
+ * removes it. The file lives outside the project (DSH_HOME/ruflo/settings.json)
+ * and never enters the repository.
+ */
+async function saveSettings(patch) {
+  const current = await loadSettings();
+  const next = { ...current };
+  if (typeof patch.baseUrl === 'string' && patch.baseUrl !== '') next.baseUrl = patch.baseUrl.replace(/\/+$/, '');
+  if (typeof patch.model === 'string' && patch.model !== '') next.model = patch.model;
+  if (typeof patch.apiKey === 'string' && patch.apiKey.trim() !== '') next.apiKey = patch.apiKey.trim();
+  if (patch.clearKey === true) next.apiKey = '';
+  if (typeof patch.lastError === 'string') next.lastError = patch.lastError;
+  next.verifiedAt = patch.verified === true ? new Date().toISOString() : null;
+  await mkdir(dirname(settingsPath()), { recursive: true });
+  await writeFile(settingsPath(), JSON.stringify(next, null, 2), 'utf8');
+  return next;
+}
+
+/** @param {object} settings @returns {object} settings without the secret. */
+function publicSettings(settings) {
+  return {
+    baseUrl: settings.baseUrl,
+    models: DEEPSEEK_MODELS,
+    model: settings.model,
+    hasKey: typeof settings.apiKey === 'string' && settings.apiKey !== '',
+    verifiedAt: settings.verifiedAt ?? null,
+    lastError: settings.lastError ?? null,
+    settingsPath: settingsPath(),
+  };
+}
+
+/**
+ * Enforce the DeepSeek-only policy: only https://api.deepseek.com is allowed.
+ * @param {string} baseUrl - candidate endpoint.
+ * @returns {string} normalized origin.
+ */
+function assertDeepSeekEndpoint(baseUrl) {
+  let url;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    throw new Error('ruflo: некорректный baseUrl');
+  }
+  if (url.protocol !== 'https:' || url.hostname !== 'api.deepseek.com') {
+    throw new Error('ruflo: разрешён только https://api.deepseek.com — другие AI-endpoint-ы запрещены');
+  }
+  return url.origin;
+}
+
+/** Environment that makes Ruflo's OpenRouter-compat client speak to DeepSeek. */
+async function deepseekEnv() {
+  const settings = await loadSettings();
+  if (typeof settings.apiKey !== 'string' || settings.apiKey === '') return {};
+  return {
+    RUFLO_PROVIDER: 'openrouter',
+    OPENROUTER_API_KEY: settings.apiKey,
+    OPENROUTER_BASE_URL: assertDeepSeekEndpoint(settings.baseUrl),
+    OPENROUTER_DEFAULT_MODEL: settings.model,
+  };
+}
+
+/** Remove credentials for every other provider so no non-DeepSeek model can answer. */
+function onlyDeepSeekEnv(env) {
+  delete env.ANTHROPIC_API_KEY;
+  delete env.ANTHROPIC_AUTH_TOKEN;
+  delete env.ANTHROPIC_BASE_URL;
+  delete env.OLLAMA_API_KEY;
+  delete env.OLLAMA_BASE_URL;
+  return env;
+}
+
 /**
  * Run the Ruflo CLI in a directory.
  * @param {object} config - plugin config.
@@ -181,6 +280,7 @@ function extractJson(text) {
 async function runCli(config, call) {
   const { node, script } = resolveCli(config);
   const timeoutMs = Number.isSafeInteger(call.timeoutMs) && call.timeoutMs > 0 ? call.timeoutMs : config.timeoutMs;
+  const aiEnv = await deepseekEnv();
   await mkdir(call.dir, { recursive: true });
   return await new Promise((resolve, reject) => {
     let stdout = '';
@@ -188,7 +288,7 @@ async function runCli(config, call) {
     let settled = false;
     const child = spawn(node, [script, ...call.args], {
       cwd: call.dir,
-      env: { ...process.env, CI: '1' },
+      env: onlyDeepSeekEnv({ ...process.env, CI: '1', ...aiEnv }),
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -283,6 +383,78 @@ function numeric(value) {
  */
 export function apply(ctx, rawConfig) {
   const config = resolveConfig(rawConfig);
+
+  // Settings UI endpoints (the key is entered in the plugin page, never in a
+  // repository file). The verify route talks only to https://api.deepseek.com.
+  ctx.effect(() =>
+    ctx.connection.fetch.register({
+      path: '/api/ruflo/settings',
+      methods: ['GET'],
+      fetch: async () => Response.json({ ok: true, settings: publicSettings(await loadSettings(config)) }),
+    }),
+    'ruflo: settings read',
+  );
+
+  ctx.effect(() =>
+    ctx.connection.fetch.register({
+      path: '/api/ruflo/settings',
+      methods: ['POST'],
+      requestBody: 'buffered',
+      fetch: async (request) => {
+        try {
+          const body = await request.json();
+          if (body === null || typeof body !== 'object') return Response.json({ ok: false, error: 'invalid body' }, { status: 400 });
+          if (typeof body.baseUrl === 'string' && body.baseUrl !== '') assertDeepSeekEndpoint(body.baseUrl);
+          const saved = await saveSettings({
+            ...(typeof body.baseUrl === 'string' ? { baseUrl: body.baseUrl } : {}),
+            ...(typeof body.model === 'string' ? { model: body.model } : {}),
+            ...(typeof body.apiKey === 'string' ? { apiKey: body.apiKey } : {}),
+            ...(body.clearKey === true ? { clearKey: true } : {}),
+          });
+          return Response.json({ ok: true, settings: publicSettings(saved) });
+        } catch (error) {
+          return Response.json({ ok: false, error: error instanceof Error ? error.message : String(error) }, { status: 400 });
+        }
+      },
+    }),
+    'ruflo: settings write',
+  );
+
+  ctx.effect(() =>
+    ctx.connection.fetch.register({
+      path: '/api/ruflo/verify',
+      methods: ['POST'],
+      requestBody: 'buffered',
+      fetch: async (request) => {
+        try {
+          const body = await request.json().catch(() => ({}));
+          const settings = await loadSettings(config);
+          const key = typeof body?.apiKey === 'string' && body.apiKey.trim() !== '' ? body.apiKey.trim() : settings.apiKey;
+          if (key === '') return Response.json({ ok: false, error: 'Ключ DeepSeek не введён' }, { status: 400 });
+          const baseUrl = assertDeepSeekEndpoint(typeof body?.baseUrl === 'string' && body.baseUrl !== '' ? body.baseUrl : settings.baseUrl);
+          const response = await fetch(`${baseUrl}/models`, {
+            headers: { authorization: `Bearer ${key}`, accept: 'application/json' },
+            signal: AbortSignal.timeout(20000),
+          });
+          if (!response.ok) {
+            const message = `DeepSeek ответил ${response.status}`;
+            await saveSettings({ lastError: message }).catch(() => {});
+            return Response.json({ ok: false, status: response.status, error: message }, { status: 200 });
+          }
+          const payload = await response.json();
+          const models = Array.isArray(payload?.data) ? payload.data.map((item) => String(item?.id ?? '')).filter((id) => id !== '').slice(0, 20) : [];
+          if (typeof body?.apiKey === 'string' && body.apiKey.trim() !== '') await saveSettings({ apiKey: body.apiKey, verified: true });
+          else await saveSettings({ verified: true });
+          return Response.json({ ok: true, status: response.status, models, platform: 'deepseek', endpoint: baseUrl });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          await saveSettings({ lastError: message }).catch(() => {});
+          return Response.json({ ok: false, error: message }, { status: 200 });
+        }
+      },
+    }),
+    'ruflo: deepseek key verify',
+  );
 
   /** Register one tool. */
   const tool = (toolName, description, parameters, execute) => {
@@ -516,6 +688,43 @@ export function apply(ctx, rawConfig) {
         taskId = typeof json?.taskId === 'string' ? json.taskId : undefined;
       }
 
+      const taskLabel = taskId === undefined ? 'adhoc' : taskId;
+      const settings = await loadSettings(config);
+      if (settings.apiKey !== '' && settings.apiKey !== undefined) {
+        // DeepSeek API executor: Ruflo's own agent runtime with the provider
+        // forced to its OpenAI-compatible client pointed at api.deepseek.com.
+        try {
+          const baseUrl = assertDeepSeekEndpoint(settings.baseUrl);
+          const seconds = Math.max(60, Math.floor(config.executeTimeoutMs / 1000));
+          const spawned = await runCli(config, {
+            dir: where.dir,
+            args: ['agent', 'spawn', '-t', 'coder', '-p', 'openrouter', '-m', settings.model, '--task', description, '--timeout', String(seconds), '--format', 'json'],
+            timeoutMs: config.executeTimeoutMs + 60000,
+            signal: exec.signal,
+          });
+          const output = render(where, spawned, { tolerateError: true });
+          await runCli(config, {
+            dir: where.dir,
+            args: ['memory', 'store', '-k', `task/${taskLabel}/executor`, '--value', `deepseek-api:${settings.model}`, '--provenance', 'agent_output', '--format', 'json'],
+            signal: exec.signal,
+          }).catch(() => {});
+          return JSON.stringify({
+            scope: where.scope,
+            cwd: where.dir,
+            taskId: taskId ?? null,
+            description,
+            executor: 'deepseek-api',
+            endpoint: baseUrl,
+            model: settings.model,
+            output: output.slice(-6000),
+            note: 'Задачу исполнил Ruflo-agent через DeepSeek API (api.deepseek.com). Только DeepSeek: Anthropic/Ollama-ключи вычищаются из окружения.',
+          }, null, 2);
+        } catch (error) {
+          // Fall through to the DSH subagent (also DeepSeek) with the reason.
+          var apiFailure = error instanceof Error ? error.message : String(error);
+        }
+      }
+
       const subagents = ctx.get('subagents');
       if (subagents === undefined || typeof subagents.startActivation !== 'function') {
         throw new Error('ruflo_execute: сервис subagents недоступен — включите Agent Teams (dsh-experimental-agent-team-profile)');
@@ -523,7 +732,6 @@ export function apply(ctx, rawConfig) {
       const parent = exec.agent;
       if (parent === undefined) throw new Error('ruflo_execute: нужен живой агент-родитель (вызовите инструмент из чата)');
       const provider = typeof args.provider === 'string' && args.provider !== '' ? args.provider : config.subagentProvider;
-      const taskLabel = taskId === undefined ? 'adhoc' : taskId;
       const prompt = [
         `Ты — DeepSeek-исполнитель задачи, которую координирует Ruflo (плагин dsh-ruflo). Рабочая папка: ${where.dir}.`,
         `Область Ruflo: ${where.scope}.`,
@@ -555,9 +763,11 @@ export function apply(ctx, rawConfig) {
         cwd: where.dir,
         taskId: taskId ?? null,
         description,
+        executor: 'dsh-subagent',
         provider,
         childId: activation.childId,
         messageId: activation.messageId ?? null,
+        ...(typeof apiFailure === 'string' ? { deepseekApiError: apiFailure } : {}),
         note: 'DSH-субагент (модель DeepSeek) запущен; итог придёт уведомлением в этот чат и будет сохранён в память Ruflo. Ruflo — координатор/память, исполнитель — DSH.',
       }, null, 2);
     },

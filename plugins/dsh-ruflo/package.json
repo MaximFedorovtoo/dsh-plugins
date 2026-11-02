@@ -1,13 +1,13 @@
 {
   "name": "dsh-ruflo",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
-  "description": "Ruflo for DSH: project- or chat-scoped memory, tasks and swarms from the ruvnet/ruflo CLI, DeepSeek-native init (AGENTS.md, no Claude Code artifacts) and a DeepSeek executor bridge that runs Ruflo tasks through DSH subagents.",
+  "description": "Ruflo for DSH: project- or chat-scoped memory, tasks and swarms, DeepSeek-native init, /ruflo composer command and a DeepSeek-only executor whose API key is entered in the plugin settings page.",
   "license": "MIT",
   "author": "Maxim Fedorov (Winkerok) <https://github.com/MaximFedorovtoo>",
   "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-ruflo",
   "repository": { "type": "git", "url": "git+https://github.com/MaximFedorovtoo/dsh-plugins.git", "directory": "plugins/dsh-ruflo" },
-  "keywords": ["dsh","dsh-plugin","deepseek-harness","ruflo","claude-flow","agent-memory","swarm","tasks","hooks","orchestration","executor"],
+  "keywords": ["dsh","dsh-plugin","deepseek-harness","ruflo","deepseek","agent-memory","swarm","tasks","orchestration","executor"],
   "engines": { "dsh": ">=0.2.0 <0.3.0" },
   "icon": "./icon.svg",
   "exports": { ".": "./index.js", "./client": "./client.js", "./locale/*.json": "./locale/*.json", "./icon": "./icon.svg" },
@@ -15,6 +15,10 @@
   "dependencies": { "ruflo": "^3.68.0" },
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" },
-    "client": { "platform": "web", "immediately": true, "inject": ["@deepseek-ai/dsh-client-locale","@deepseek-ai/dsh-client-ui-commands","@deepseek-ai/dsh-client-ui-conversation"] }
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-locale","@deepseek-ai/dsh-client-ui-commands","@deepseek-ai/dsh-client-ui-conversation","@deepseek-ai/dsh-client-ui-plugin-manager"]
+    }
   }
 }

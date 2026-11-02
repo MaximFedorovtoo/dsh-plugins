@@ -55,6 +55,23 @@ window.__ModuleLoader__.load({
       'cmd.initProject': 'Инициализируй Ruflo в проекте (scope: project).',
       'cmd.initChat': 'Инициализируй Ruflo в этом чате (scope: chat).',
       'cmd.swarmChat': 'Покажи статус swarm Ruflo в этом чате; если swarm не инициализирован — инициализируй его в v3-режиме (scope: chat).',
+      settingsTitle: 'DeepSeek API для исполнителя Ruflo',
+      settingsHint: 'Ключ хранится вне проекта — в профиле DSH (settings.json), вводится только здесь. Разрешён только endpoint https://api.deepseek.com. Ключ можно проверить перед сохранением.',
+      settingsBase: 'Endpoint',
+      settingsModel: 'Модель',
+      settingsKey: 'API-ключ DeepSeek',
+      settingsKeyPlaceholder: 'sk-… (вставьте ключ, он не показывается)',
+      settingsKeySaved: 'Ключ сохранён. Введите новый, чтобы заменить.',
+      settingsSave: 'Сохранить',
+      settingsVerify: 'Проверить ключ',
+      settingsClear: 'Удалить ключ',
+      settingsSaved: 'Сохранено.',
+      settingsVerified: 'Ключ DeepSeek работает.',
+      settingsVerifyFailed: 'Проверка не прошла: ',
+      settingsNoKey: 'Ключ не задан — исполнитель Ruflo работать не будет.',
+      settingsLoading: 'Загрузка…',
+      settingsLastError: 'Последняя ошибка: ',
+      settingsVerifiedAt: 'Проверен: ',
     };
 
     const en = {
@@ -99,6 +116,23 @@ window.__ModuleLoader__.load({
       'cmd.initProject': 'Initialize Ruflo in the project (scope: project).',
       'cmd.initChat': 'Initialize Ruflo in this chat (scope: chat).',
       'cmd.swarmChat': 'Show Ruflo swarm status in this chat; if the swarm is not initialized, initialize it in v3 mode (scope: chat).',
+      settingsTitle: 'DeepSeek API for the Ruflo executor',
+      settingsHint: 'The key lives outside the project in the DSH profile (settings.json) and is entered only here. Only https://api.deepseek.com is allowed. You can verify the key before saving.',
+      settingsBase: 'Endpoint',
+      settingsModel: 'Model',
+      settingsKey: 'DeepSeek API key',
+      settingsKeyPlaceholder: 'sk-… (paste the key, it is never shown)',
+      settingsKeySaved: 'A key is saved. Enter a new one to replace it.',
+      settingsSave: 'Save',
+      settingsVerify: 'Verify key',
+      settingsClear: 'Remove key',
+      settingsSaved: 'Saved.',
+      settingsVerified: 'The DeepSeek key works.',
+      settingsVerifyFailed: 'Verification failed: ',
+      settingsNoKey: 'No key configured — the Ruflo executor will not run.',
+      settingsLoading: 'Loading…',
+      settingsLastError: 'Last error: ',
+      settingsVerifiedAt: 'Verified: ',
     };
 
     const OPTIONS = [
@@ -144,9 +178,162 @@ window.__ModuleLoader__.load({
       if (typeof shell.focus === 'function') shell.focus();
     }
 
+    const FIELD = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 };
+    const INPUT = {
+      boxSizing: 'border-box',
+      height: 28,
+      padding: '0 8px',
+      border: '0.5px solid var(--dsw-alias-border-l2)',
+      borderRadius: 'var(--dsw-radius-sm)',
+      background: 'var(--dsw-alias-bg-l2)',
+      color: 'var(--dsw-alias-label-primary)',
+      font: 'inherit',
+      fontSize: 12,
+    };
+    const BUTTON = {
+      boxSizing: 'border-box',
+      height: 28,
+      padding: '0 12px',
+      borderRadius: 'var(--dsw-radius-sm)',
+      border: '0.5px solid var(--dsw-alias-border-l2)',
+      background: 'transparent',
+      color: 'var(--dsw-alias-label-primary)',
+      font: 'inherit',
+      fontSize: 12,
+      cursor: 'pointer',
+    };
+
+    /**
+     * Bundle settings page (Plugins → Ruflo). The DeepSeek API key is entered
+     * here, stored in DSH_HOME/ruflo/settings.json, and verified against
+     * https://api.deepseek.com only.
+     */
+    function SettingsPanel(props) {
+      const t = typeof props.t === 'function' ? props.t : (key) => (ru[key] !== undefined ? ru[key] : key);
+      const [state, setState] = React.useState({ loading: true, baseUrl: 'https://api.deepseek.com', models: ['deepseek-chat', 'deepseek-reasoner'], model: 'deepseek-chat', hasKey: false, verifiedAt: null, lastError: null });
+      const [key, setKey] = React.useState('');
+      const [busy, setBusy] = React.useState('');
+      const [message, setMessage] = React.useState('');
+
+      React.useEffect(() => {
+        let alive = true;
+        fetch('api/ruflo/settings', { credentials: 'same-origin', headers: { accept: 'application/json' } })
+          .then((response) => response.json())
+          .then((payload) => {
+            if (alive && payload !== null && payload.ok === true) setState((current) => ({ ...current, ...payload.settings, loading: false }));
+          })
+          .catch(() => {})
+          .finally(() => {
+            if (alive) setState((current) => (current.loading ? { ...current, loading: false } : current));
+          });
+        return () => {
+          alive = false;
+        };
+      }, []);
+
+      const request = async (path, body) => {
+        const response = await fetch(path, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify(body),
+        });
+        return await response.json();
+      };
+
+      const save = async () => {
+        setBusy('save');
+        setMessage('');
+        try {
+          const payload = await request('api/ruflo/settings', { model: state.model, ...(key.trim() !== '' ? { apiKey: key.trim() } : {}) });
+          if (payload.ok === true) {
+            setState((current) => ({ ...current, ...payload.settings }));
+            setKey('');
+            setMessage(t('settingsSaved'));
+          } else setMessage(payload.error || t('settingsVerifyFailed'));
+        } catch (error) {
+          setMessage(String(error));
+        } finally {
+          setBusy('');
+        }
+      };
+
+      const verify = async () => {
+        setBusy('verify');
+        setMessage('');
+        try {
+          const payload = await request('api/ruflo/verify', { ...(key.trim() !== '' ? { apiKey: key.trim() } : {}) });
+          if (payload.ok === true) {
+            setState((current) => ({ ...current, hasKey: true, verifiedAt: new Date().toISOString(), lastError: null }));
+            setKey('');
+            const models = Array.isArray(payload.models) && payload.models.length > 0 ? ` (${payload.models.slice(0, 4).join(', ')})` : '';
+            setMessage(t('settingsVerified') + models);
+          } else setMessage(t('settingsVerifyFailed') + (payload.error || `status ${String(payload.status ?? '')}`));
+        } catch (error) {
+          setMessage(String(error));
+        } finally {
+          setBusy('');
+        }
+      };
+
+      const clear = async () => {
+        setBusy('clear');
+        setMessage('');
+        try {
+          const payload = await request('api/ruflo/settings', { clearKey: true });
+          if (payload.ok === true) setState((current) => ({ ...current, hasKey: false, verifiedAt: null }));
+        } catch (error) {
+          setMessage(String(error));
+        } finally {
+          setBusy('');
+        }
+      };
+
+      return h(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 0' } },
+        h('div', { style: { fontSize: 14, fontWeight: 600 } }, t('settingsTitle')),
+        h('div', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary)' } }, t('settingsHint')),
+        h(
+          'div',
+          { style: { display: 'grid', gridTemplateColumns: 'minmax(120px, 180px) 1fr', gap: 8, alignItems: 'center' } },
+          h('span', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary)' } }, t('settingsBase')),
+          h('code', { style: { fontSize: 12 } }, state.baseUrl),
+          h('span', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary)' } }, t('settingsModel')),
+          h(
+            'select',
+            { style: INPUT, value: state.model, onChange: (event) => setState((current) => ({ ...current, model: event.target.value })) },
+            ...(Array.isArray(state.models) ? state.models : ['deepseek-chat', 'deepseek-reasoner']).map((model) => h('option', { key: model, value: model }, model)),
+          ),
+          h('span', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary)' } }, t('settingsKey')),
+          h('input', {
+            style: INPUT,
+            type: 'password',
+            autoComplete: 'off',
+            spellCheck: false,
+            placeholder: state.hasKey ? t('settingsKeySaved') : t('settingsKeyPlaceholder'),
+            value: key,
+            onChange: (event) => setKey(event.target.value),
+          }),
+        ),
+        h(
+          'div',
+          { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+          h('button', { type: 'button', style: BUTTON, disabled: busy !== '', onClick: save }, busy === 'save' ? '…' : t('settingsSave')),
+          h('button', { type: 'button', style: BUTTON, disabled: busy !== '', onClick: verify }, busy === 'verify' ? '…' : t('settingsVerify')),
+          h('button', { type: 'button', style: BUTTON, disabled: busy !== '' || !state.hasKey, onClick: clear }, busy === 'clear' ? '…' : t('settingsClear')),
+        ),
+        h('div', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary)' } },
+          state.loading ? t('settingsLoading') : state.hasKey ? (state.verifiedAt === null ? '● ' + t('settingsKeySaved') : '✓ ' + t('settingsVerifiedAt') + state.verifiedAt) : '○ ' + t('settingsNoKey'),
+          state.lastError !== null && state.lastError !== undefined ? h('div', null, t('settingsLastError') + state.lastError) : null,
+          message !== '' ? h('div', { style: { color: 'var(--dsw-alias-state-success-primary)' } }, message) : null,
+        ),
+      );
+    }
+
     return {
       name: NS,
-      inject: ['commandUi', 'conversation', 'locale'],
+      inject: ['commandUi', 'conversation', 'locale', 'slots'],
       apply(ctx) {
         const locale = ctx.get('locale');
         if (locale !== undefined && typeof locale.register === 'function') {
@@ -173,6 +360,13 @@ window.__ModuleLoader__.load({
           }),
           'ruflo: /ruflo command',
         );
+
+        // Bundle settings page on Plugins → Ruflo: DeepSeek API key entry.
+        if (ctx.slots !== undefined) {
+          ctx.slots.inject('plugins.bundle.config', () =>
+            ctx.slots.register({ name: 'plugins.bundle.config', key: 'dsh-ruflo', locale: NS }, SettingsPanel),
+          );
+        }
       },
     };
   },

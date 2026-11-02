@@ -98,3 +98,12 @@ Ruflo is a coordinator and memory, not an executor: its own agents need an Anthr
 - Config: `subagentProvider` (`spawn` by default) and `executeMaxDepth` (`0` — the executor cannot delegate further).
 
 Ruflo swarm readiness only means coordination state is initialized; execution happens in DSH.
+## DeepSeek-only executor and key UI (0.5.0)
+
+The plugin now speaks to exactly one model provider: **DeepSeek**.
+
+- **Plugins → Ruflo** has a settings page: the DeepSeek API key is pasted there (it is never written into the project or into a repository file), the endpoint is fixed to `https://api.deepseek.com`, and the model is one of `deepseek-chat` / `deepseek-reasoner`.
+- **Verify key** sends `GET https://api.deepseek.com/models` with the key. Nothing is sent to OpenRouter, Anthropic, OpenAI, or any other endpoint; a non-DeepSeek base URL is rejected by the host before any request.
+- The key lives in `<DSH_HOME>/ruflo/settings.json` on this machine and is surfaced to the model only as `hasKey: true/false`.
+- Every Ruflo CLI child gets `RUFLO_PROVIDER=openrouter`, `OPENROUTER_API_KEY=<key>`, `OPENROUTER_BASE_URL=https://api.deepseek.com` and `OPENROUTER_DEFAULT_MODEL=<model>`; `ANTHROPIC_*` and `OLLAMA_*` credentials are stripped from the child environment, so a non-DeepSeek model cannot answer.
+- `ruflo_execute` prefers the **DeepSeek API executor**: `ruflo agent spawn -t coder -p openrouter -m <model> --task <task>` inside Ruflo, which executes through `api.deepseek.com`. If that fails (or no key is set), it falls back to a DSH subagent (also DeepSeek) with `executeMaxDepth` defaulting to `1`.

@@ -100,3 +100,13 @@ Ruflo — координатор и память, а не исполнитель
 - Настройка: `subagentProvider` (`spawn` по умолчанию), `executeMaxDepth` (`0` — исполнитель не может делегировать дальше).
 
 Готовность swarm означает только инициализированное состояние координации; исполнение идёт в DSH.
+
+## Только DeepSeek: ключ в UI и исполнитель (0.5.0)
+
+Плагин работает ровно с одним провайдером модели — **DeepSeek**.
+
+- На странице **Plugins → Ruflo** появилась форма настроек: API-ключ DeepSeek вводится там (он не попадает ни в проект, ни в файлы репозитория), endpoint зафиксирован на `https://api.deepseek.com`, модель — `deepseek-chat` или `deepseek-reasoner`.
+- Кнопка **«Проверить ключ»** делает `GET https://api.deepseek.com/models`. Никакие OpenRouter/Anthropic/OpenAI-endpoint-ы не вызываются: чужой base URL отклоняется ещё на хосте до запроса.
+- Ключ хранится в `<DSH_HOME>/ruflo/settings.json` на этой машине; модель видит только `hasKey: true/false`.
+- Каждый дочерний процесс Ruflo получает `RUFLO_PROVIDER=openrouter`, `OPENROUTER_API_KEY=<ключ>`, `OPENROUTER_BASE_URL=https://api.deepseek.com`, `OPENROUTER_DEFAULT_MODEL=<модель>`, а `ANTHROPIC_*` и `OLLAMA_*` переменные вычищаются — ответить другой моделью нельзя.
+- `ruflo_execute` сначала использует **DeepSeek API-исполнителя**: `ruflo agent spawn -t coder -p openrouter -m <модель> --task <задача>` — исполнение идёт через `api.deepseek.com`. Если ключа нет или вызов упал — откат на DSH-субагента (тоже DeepSeek), `executeMaxDepth` по умолчанию `1`.
