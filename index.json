@@ -434,6 +434,19 @@
                                        },
                         "versions":  [
                                          {
+                                             "version":  "0.2.0",
+                                             "publishTimestamp":  1793609099,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "69fdee92c36b53ef86eca79e1082a5c840d0c1a6",
+                                                            "path":  "plugins/dsh-unslop"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         },
+                                         {
                                              "version":  "0.1.0",
                                              "publishTimestamp":  1793608951,
                                              "source":  {
