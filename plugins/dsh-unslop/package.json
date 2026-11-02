@@ -1,42 +1,36 @@
 {
   "name": "dsh-unslop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
-  "description": "De-AI writing for DSH agents: vendored theclaymethod/unslop scanners, fact-preservation gates, suggestion checks and an LLM rewrite that removes AI tells without changing meaning.",
+  "description": "De-AI writing for DSH agents: vendored theclaymethod/unslop scanners, fact-preservation gates, suggestion checks, an LLM rewrite, and a /unslop composer command.",
   "license": "MIT",
   "author": "Maxim Fedorov (Winkerok) <https://github.com/MaximFedorovtoo>",
   "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-unslop",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MaximFedorovtoo/dsh-plugins.git",
-    "directory": "plugins/dsh-unslop"
-  },
-  "keywords": ["dsh", "dsh-plugin", "deepseek-harness", "unslop", "writing", "editing", "ai-detection", "de-slop", "text"],
-  "engines": {
-    "dsh": ">=0.2.0 <0.3.0"
-  },
+  "repository": { "type": "git", "url": "git+https://github.com/MaximFedorovtoo/dsh-plugins.git", "directory": "plugins/dsh-unslop" },
+  "keywords": ["dsh","dsh-plugin","deepseek-harness","unslop","writing","editing","ai-detection","de-slop","text","slash-command"],
+  "engines": { "dsh": ">=0.2.0 <0.3.0" },
   "icon": "./icon.svg",
   "exports": {
     ".": "./index.js",
+    "./client": "./client.js",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
   },
   "files": [
-    "index.js",
-    "cordis.patch.yml",
-    "locale/*.json",
-    "icon.svg",
-    "README.md",
-    "README.ru.md",
-    "INSTALL.md",
-    "INSTALL.en.md",
-    "python/SKILL.md",
-    "python/scripts/*",
-    "python/evals/**/*"
+    "index.js","client.js","cordis.patch.yml","locale/*.json","icon.svg",
+    "README.md","README.ru.md","INSTALL.md","INSTALL.en.md",
+    "python/SKILL.md","python/scripts/*","python/evals/**/*"
   ],
   "dsh": {
-    "bundle": {
-      "patch": "./cordis.patch.yml"
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-commands",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
     }
   }
 }
