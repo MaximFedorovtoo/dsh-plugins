@@ -1,0 +1,20 @@
+# Ruflo (ruvnet/ruflo) for DSH: memory, tasks, swarms and hooks.
+#
+# Every tool takes `scope: "project" | "chat"`:
+#   project — the open project's working directory;
+#   chat    — an isolated directory per DSH session, so one chat never sees
+#             another chat's Ruflo memory/tasks.
+- insert:
+    - id: ruflo
+      name: dsh-ruflo
+      config:
+        # '' = the profile's `ruflo` package (node_modules/ruflo/bin/ruflo.js)
+        cliPath: ""
+        # '' = the agent session's workspace; set to pin every project call to one folder
+        projectRoot: ""
+        # Where chat-scoped Ruflo state lives ('' = <DSH_HOME>/cache/ruflo)
+        scopeRoot: ""
+        timeoutMs: 60000
+        initTimeoutMs: 180000
+        # Expose ruflo_raw for commands without a dedicated wrapper
+        allowRaw: true

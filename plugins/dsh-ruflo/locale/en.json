@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Ruflo (memory, tasks, swarm)",
+    "description": "ruvnet/ruflo integration: Ruflo memory, tasks, swarm coordination, agents and self-learning hooks with an explicit project or chat scope — chat state is isolated from other chats."
+  }
+}

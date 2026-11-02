@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Ruflo">
+  <circle cx="32" cy="32" r="23" />
+  <circle cx="32" cy="32" r="9" />
+  <path d="M32 9v7M32 48v7M9 32h7M48 32h7" />
+  <path d="M16 16l5 5M43 43l5 5M48 16l-5 5M21 43l-5 5" />
+</svg>
