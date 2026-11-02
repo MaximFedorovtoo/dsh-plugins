@@ -386,6 +386,19 @@
                                        },
                         "versions":  [
                                          {
+                                             "version":  "0.4.0",
+                                             "publishTimestamp":  1793610121,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "03eb387ee98c4ee32576a99bc691fa4dc3991106",
+                                                            "path":  "plugins/dsh-ruflo"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         },
+                                         {
                                              "version":  "0.3.0",
                                              "publishTimestamp":  1793609860,
                                              "source":  {
