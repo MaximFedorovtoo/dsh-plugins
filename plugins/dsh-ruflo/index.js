@@ -818,7 +818,10 @@ export function apply(ctx, rawConfig) {
       const activation = await subagents.startActivation({
         provider,
         label: `ruflo:${taskLabel}`,
-        request: { parent, prompt, cwd: where.dir, maxDepth: config.executeMaxDepth },
+        // DSH subagent requests take content blocks, not a raw string: a string
+        // is spread into single-character parts and the adapter rejects it with
+        // UNSUPPORTED_CONTENT ("content undefined").
+        request: { parent, prompt: [{ type: 'text', text: prompt }], cwd: where.dir, maxDepth: config.executeMaxDepth },
         signal: exec.signal,
         delivery: 'parent',
       });

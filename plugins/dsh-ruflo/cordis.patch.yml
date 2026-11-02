@@ -22,4 +22,4 @@
         # starts a DSH subagent (DeepSeek model) for a Ruflo task.
         subagentProvider: spawn
         # 0 = the executor child may not delegate further subagents.
-        executeMaxDepth: 0
+        executeMaxDepth: 1

@@ -1,6 +1,6 @@
 {
   "name": "dsh-ruflo",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "type": "module",
   "description": "Ruflo for DSH: project- or chat-scoped memory, tasks and swarms, DeepSeek-native init, /ruflo composer command and a DeepSeek-only executor whose API key is entered in the plugin settings page.",
   "license": "MIT",
