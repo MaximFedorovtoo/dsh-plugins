@@ -7,6 +7,18 @@ Wraps the [ruvnet/ruflo](https://github.com/ruvnet/ruflo) CLI into DSH tools wit
 
 A model can therefore attach Ruflo to a project (shared memory across chats) or to a single chat (private scratch memory), without mixing the two.
 
+## Composer command
+
+Type `/ruflo` in the composer, or open the `+` menu and pick **Ruflo** in the Commands section. A popup offers quick actions:
+
+- status of the project scope or of this chat;
+- remember / search in project memory, remember / search / stats in chat memory;
+- list project or chat tasks;
+- initialize Ruflo in the project or in this chat;
+- chat swarm status + init.
+
+Picking an action appends a ready prompt to the composer (the project or chat scope is spelled out in the prompt) — review it and send; the model then calls the matching `ruflo_*` tool. Nothing is executed from the menu itself.
+
 ## Tools
 
 | Tool | What it does |
