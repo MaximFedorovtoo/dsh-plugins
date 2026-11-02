@@ -86,3 +86,6 @@ Restart DSH. The plugin runs the CLI with DSH's bundled Node; no global npm inst
 ## License
 
 MIT. Ruflo is MIT, © rUv (ruvnet).
+## DeepSeek Harness init (0.3.0)
+
+`ruflo_init` initializes for **DSH**, not Claude Code: it runs `ruflo init --codex --skip-claude`, so the project gets `AGENTS.md` + `.agents/` + `.claude-flow/` and **no** `.claude/` directory. After init the plugin appends a “Ruflo in DeepSeek Harness” section to `AGENTS.md`: the DSH agent is told to use the `ruflo_*` tools (project/chat scopes) instead of Claude Code slash commands. Use `force: true` to migrate an existing Claude-mode initialization; memory and swarm data are preserved.

@@ -13,7 +13,7 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
@@ -330,11 +330,12 @@ export function apply(ctx, rawConfig) {
 
   tool(
     'ruflo_init',
-    'Инициализировать Ruflo в выбранной области (проект или чат): создаёт .claude-flow/, .claude/settings.json, .gitignore-записи и локальную память. В проект пишет служебные файлы — вызывайте осознанно. С flags --no-mods/--no-plugin-install/--no-global/--no-signup.',
+    'Инициализировать Ruflo в выбранной области (проект или чат) под DeepSeek Harness: создаёт AGENTS.md, .agents/ (skills), .claude-flow/ и локальную память — без Claude Code-файлов (.claude). После init в AGENTS.md добавляется секция «Ruflo in DeepSeek Harness» с описанием инструментов ruflo_*. В проект пишет служебные файлы — вызывайте осознанно.',
     {
       type: 'object',
       properties: {
         scope: { type: 'string', enum: ['project', 'chat'], description: 'Область: project или chat.' },
+        force: { type: 'boolean', description: 'Переинициализировать поверх существующей конфигурации (--force); данные памяти/swarm сохраняются.' },
       },
       required: ['scope'],
       additionalProperties: false,
@@ -343,11 +344,42 @@ export function apply(ctx, rawConfig) {
       const where = scopeDirectory(config, args.scope === 'chat' ? 'chat' : 'project', exec);
       const result = await runCli(config, {
         dir: where.dir,
-        args: ['init', '--minimal', '--skip-claude', '--no-mods', '--no-plugin-install', '--no-signup', '--no-global', '--no-skills-sh'],
+        // DeepSeek Harness reads AGENTS.md; `--codex --skip-claude` writes
+        // AGENTS.md + .agents/ and never creates Claude Code's `.claude/`.
+        args: ['init', '--codex', '--no-codex-detect', '--skip-claude', '--no-mods', '--no-plugin-install', '--no-signup', '--no-global', '--no-skills-sh', ...(args.force === true ? ['--force'] : [])],
         timeoutMs: config.initTimeoutMs,
         signal: exec.signal,
       });
-      return render(where, result);
+      let note = '';
+      try {
+        const agentsPath = join(where.dir, 'AGENTS.md');
+        const existing = await readFile(agentsPath, 'utf8').catch(() => '');
+        const marker = '## Ruflo in DeepSeek Harness';
+        if (!existing.includes(marker)) {
+          const block = [
+            '',
+            '',
+            marker,
+            '',
+            'This project uses Ruflo through the `dsh-ruflo` plugin. Prefer the DSH tools over Claude Code slash commands:',
+            '',
+            '- `ruflo_memory` — store/search project memory (`scope: "project"`) or private chat memory (`scope: "chat"`).',
+            '- `ruflo_task` — create/list Ruflo tasks in the project or chat scope.',
+            '- `ruflo_swarm` / `ruflo_agent` — Ruflo swarm and agents (separate from DSH Agent Teams; they do not execute DSH tools).',
+            '- `ruflo_status` — agents/tasks/memory state for the scope.',
+            '',
+            'Project scope writes `.claude-flow/`, `.agents/` and `.swarm/` into the project; chat scope keeps everything under `%USERPROFILE%\\.dsh\\cache\\ruflo\\chats\\<session>`. Do not store secrets in Ruflo memory.',
+            '',
+          ].join('\n');
+          await writeFile(agentsPath, existing === '' ? block : `${existing.replace(/\s+$/, '')}\n${block}`, 'utf8');
+          note = `\nAGENTS.md: добавлена секция «Ruflo in DeepSeek Harness» (${agentsPath})`;
+        } else {
+          note = `\nAGENTS.md: секция «Ruflo in DeepSeek Harness» уже есть.`;
+        }
+      } catch (error) {
+        note = `\nAGENTS.md: не удалось обновить (${error instanceof Error ? error.message : String(error)}).`;
+      }
+      return `${render(where, result)}${note}`;
     },
   );
 

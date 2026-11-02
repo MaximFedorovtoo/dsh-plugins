@@ -86,3 +86,7 @@ dsh plugin --profile desktop add ruflo
 ## Лицензия
 
 MIT. Ruflo — MIT, © rUv (ruvnet).
+
+## Инициализация под DeepSeek Harness (0.3.0)
+
+`ruflo_init` инициализирует проект под **DSH**, а не Claude Code: вызывается `ruflo init --codex --skip-claude`, поэтому появляются `AGENTS.md` + `.agents/` + `.claude-flow/`, и **никакого** `.claude/`. После init плагин дописывает в `AGENTS.md` секцию «Ruflo in DeepSeek Harness»: DSH-агенту предписано использовать инструменты `ruflo_*` с областями project/chat вместо слэш-команд Claude Code. Для миграции старой Claude-инициализации передайте `force: true` — память и swarm сохраняются.

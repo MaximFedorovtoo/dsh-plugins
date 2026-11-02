@@ -1,20 +1,14 @@
 {
   "name": "dsh-ruflo",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
-  "description": "Ruflo for DSH: project- or chat-scoped agent memory, tasks, swarms, agents and hooks from the ruvnet/ruflo CLI, plus a /ruflo command in the composer menu.",
+  "description": "Ruflo for DSH: project- or chat-scoped memory, tasks, swarms and agents from the ruvnet/ruflo CLI, initialized for DeepSeek Harness (AGENTS.md, no Claude Code artifacts) with a /ruflo composer command.",
   "license": "MIT",
   "author": "Maxim Fedorov (Winkerok) <https://github.com/MaximFedorovtoo>",
   "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-ruflo",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MaximFedorovtoo/dsh-plugins.git",
-    "directory": "plugins/dsh-ruflo"
-  },
-  "keywords": ["dsh", "dsh-plugin", "deepseek-harness", "ruflo", "claude-flow", "agent-memory", "swarm", "tasks", "hooks", "orchestration", "slash-command"],
-  "engines": {
-    "dsh": ">=0.2.0 <0.3.0"
-  },
+  "repository": { "type": "git", "url": "git+https://github.com/MaximFedorovtoo/dsh-plugins.git", "directory": "plugins/dsh-ruflo" },
+  "keywords": ["dsh","dsh-plugin","deepseek-harness","ruflo","claude-flow","agent-memory","swarm","tasks","hooks","orchestration","slash-command"],
+  "engines": { "dsh": ">=0.2.0 <0.3.0" },
   "icon": "./icon.svg",
   "exports": {
     ".": "./index.js",
@@ -23,23 +17,12 @@
     "./icon": "./icon.svg"
   },
   "files": [
-    "index.js",
-    "client.js",
-    "cordis.patch.yml",
-    "locale/*.json",
-    "icon.svg",
-    "README.md",
-    "README.ru.md",
-    "INSTALL.md",
-    "INSTALL.en.md"
+    "index.js","client.js","cordis.patch.yml","locale/*.json","icon.svg",
+    "README.md","README.ru.md","INSTALL.md","INSTALL.en.md"
   ],
-  "dependencies": {
-    "ruflo": "^3.68.0"
-  },
+  "dependencies": { "ruflo": "^3.68.0" },
   "dsh": {
-    "bundle": {
-      "patch": "./cordis.patch.yml"
-    },
+    "bundle": { "patch": "./cordis.patch.yml" },
     "client": {
       "platform": "web",
       "immediately": true,
