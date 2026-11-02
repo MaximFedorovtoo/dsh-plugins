@@ -329,6 +329,41 @@
                                                          }
                                          }
                                      ]
+                    },
+                    {
+                        "name":  "dsh-agent-desktop",
+                        "title":  {
+                                      "en":  "Computer Use (agent-desktop)",
+                                      "ru":  "Компьютерные действия (agent-desktop)",
+                                      "zh":  "桌面操作（agent-desktop）"
+                                  },
+                        "description":  {
+                                            "en":  "Computer use for agents: observes any desktop app through its OS accessibility tree and operates it by stable refs (snapshot, click, type, keys, clipboard, screenshots, windows, notifications) on Windows, macOS and Linux.",
+                                            "ru":  "Компьютерные действия для агентов: видит любое приложение через accessibility-дерево ОС и управляет им по устойчивым refs (снимки, клики, ввод, клавиши, буфер обмена, скриншоты, окна, уведомления) на Windows, macOS и Linux.",
+                                            "zh":  "面向代理的桌面操作：通过操作系统无障碍树观察并操作任意桌面应用，基于稳定 ref（快照、点击、输入、按键、剪贴板、截图、窗口、通知），支持 Windows、macOS 和 Linux。"
+                                        },
+                        "icon":  "icons/dsh-agent-desktop.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-agent-desktop",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-agent-desktop"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "0.1.0",
+                                             "publishTimestamp":  1793607023,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "ecad8f10b0eb12309fe03d838c0fb8ceee4fe667",
+                                                            "path":  "plugins/dsh-agent-desktop"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
                     }
                 ]
 }

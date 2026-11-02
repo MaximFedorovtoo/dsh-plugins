@@ -305,3 +305,23 @@ bundle `@deepseek-ai/dsh-experimental-voice-input-bundle` из `dsh.profile.bund
 `%USERPROFILE%\.dsh\speech-to-text\gigaam`. Опциональный движок `e2e` (с
 пунктуацией) требует Python/PyTorch — подробности в
 [`plugins/dsh-voice-ru/INSTALL.md`](plugins/dsh-voice-ru/INSTALL.md).
+
+## 12. Компьютерные действия (`dsh-agent-desktop`)
+
+Обёртка [vercel-labs/agent-desktop](https://github.com/vercel-labs/agent-desktop):
+агент видит приложения через accessibility-дерево ОС и управляет ими по
+устойчивым refs (снимок → действие → проверка новым снимком). Windows, macOS,
+Linux.
+
+```powershell
+dsh plugin --profile desktop add https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-agent-desktop
+dsh plugin --profile desktop add agent-desktop
+```
+
+Перезапустите DSH. Инструмент `desktop_status` покажет разрешения и платформу.
+На macOS нужно выдать Accessibility, на Windows ничего не требуется, на Linux —
+графическая сессия с AT-SPI.
+
+Если pnpm блокирует postinstall (`ERR_PNPM_IGNORED_BUILDS`), добавьте
+`strictDepBuilds: false` в `%USERPROFILE%\.dsh\profiles\desktop\pnpm-workspace.yaml`.
+Подробности и инструменты — в [`plugins/dsh-agent-desktop/README.ru.md`](plugins/dsh-agent-desktop/README.ru.md).
