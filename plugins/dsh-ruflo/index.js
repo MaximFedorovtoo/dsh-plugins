@@ -384,23 +384,18 @@ function numeric(value) {
 export function apply(ctx, rawConfig) {
   const config = resolveConfig(rawConfig);
 
-  // Settings UI endpoints (the key is entered in the plugin page, never in a
-  // repository file). The verify route talks only to https://api.deepseek.com.
+  // Settings UI endpoint (the key is entered in the plugin page, never in a
+  // repository file). One path serves GET and POST: DSH allows exactly one
+  // Fetch route per path. The verify route talks only to api.deepseek.com.
   ctx.effect(() =>
     ctx.connection.fetch.register({
       path: '/api/ruflo/settings',
-      methods: ['GET'],
-      fetch: async () => Response.json({ ok: true, settings: publicSettings(await loadSettings(config)) }),
-    }),
-    'ruflo: settings read',
-  );
-
-  ctx.effect(() =>
-    ctx.connection.fetch.register({
-      path: '/api/ruflo/settings',
-      methods: ['POST'],
+      methods: ['GET', 'POST'],
       requestBody: 'buffered',
       fetch: async (request) => {
+        if (request.method === 'GET') {
+          return Response.json({ ok: true, settings: publicSettings(await loadSettings(config)) });
+        }
         try {
           const body = await request.json();
           if (body === null || typeof body !== 'object') return Response.json({ ok: false, error: 'invalid body' }, { status: 400 });
@@ -417,7 +412,7 @@ export function apply(ctx, rawConfig) {
         }
       },
     }),
-    'ruflo: settings write',
+    'ruflo: settings route',
   );
 
   ctx.effect(() =>
