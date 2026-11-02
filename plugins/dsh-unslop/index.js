@@ -9,10 +9,9 @@
  * Python; the plugin itself has no npm dependencies.
  */
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { join, dirname, isAbsolute } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
@@ -25,6 +24,16 @@ export const inject = ['tools', 'llm'];
 const PLUGIN_DIR = dirname(fileURLToPath(import.meta.url));
 /** Default scripts directory shipped with the plugin. */
 const DEFAULT_SCRIPTS = join(PLUGIN_DIR, 'python', 'scripts');
+/** Impostor pool vendored from the upstream unslop evals (MIT). */
+const DEFAULT_IMPOSTORS = join(PLUGIN_DIR, 'python', 'evals', 'fixtures', 'voice', 'impostors');
+/** One safe path segment for a voice name. */
+const VOICE_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+/** Windows device names cannot be directory names, even with an extension. */
+const RESERVED_VOICE_NAMES = new Set([
+  'CON', 'PRN', 'AUX', 'NUL',
+  'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+  'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
+]);
 
 /** @returns {string} DSH home. */
 function dshHome() {
@@ -57,7 +66,186 @@ function resolveConfig(raw) {
     llmProvider: typeof source.llmProvider === 'string' && source.llmProvider !== '' ? source.llmProvider : 'deepseek-account',
     llmModel: typeof source.llmModel === 'string' && source.llmModel !== '' ? source.llmModel : 'deepseek-flash',
     maxTokens: Number.isSafeInteger(source.maxTokens) && source.maxTokens > 0 ? source.maxTokens : 4000,
+    // Voice teach/mimic. Project voices live in <cwd>/.unslop/voice; chat
+    // voices stay in a per-session cache directory so chats never share a
+    // learned voice unless the user copies it.
+    voiceRoot: typeof source.voiceRoot === 'string' ? source.voiceRoot.trim() : '',
+    chatRoot: typeof source.chatRoot === 'string' && source.chatRoot !== '' ? source.chatRoot : join(dshHome(), 'cache', 'unslop', 'chats'),
+    impostorsRoot: typeof source.impostorsRoot === 'string' ? source.impostorsRoot.trim() : '',
+    voiceSeed: Number.isSafeInteger(source.voiceSeed) && source.voiceSeed >= 0 ? source.voiceSeed : 7,
+    voiceTimeoutMs: Number.isSafeInteger(source.voiceTimeoutMs) && source.voiceTimeoutMs > 0 ? source.voiceTimeoutMs : 120000,
   };
+}
+
+/** @param {string | undefined} value @returns {string} path-safe id. */
+function safeId(value) {
+  const cleaned = typeof value === 'string' ? value.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64) : '';
+  return cleaned === '' ? 'anonymous' : cleaned;
+}
+
+/** @param {object} exec - tool execution @returns {string} session working directory. */
+function sessionCwd(exec) {
+  const session = exec?.agent?.session;
+  return typeof session?.header?.cwd === 'string' && session.header.cwd !== '' ? session.header.cwd : process.cwd();
+}
+
+/**
+ * Resolve the voice root for a scope.
+ * @param {object} config - plugin config.
+ * @param {'project'|'chat'} scope - project or chat.
+ * @param {object} exec - tool execution.
+ * @returns {{dir: string, scope: string}} voices root.
+ */
+function scopeDirectory(config, scope, exec) {
+  const cwd = sessionCwd(exec);
+  if (scope === 'chat') {
+    const session = exec?.agent?.session;
+    const id = safeId(session?.id ?? process.env.DSH_SESSION_ID);
+    const base = isAbsolute(config.chatRoot) ? config.chatRoot : join(cwd, config.chatRoot);
+    return { scope: 'chat', dir: join(base, id, '.unslop', 'voice') };
+  }
+  const configured = config.voiceRoot;
+  const dir = configured === ''
+    ? join(cwd, '.unslop', 'voice')
+    : (isAbsolute(configured) ? configured : join(cwd, configured));
+  return { scope: 'project', dir };
+}
+
+/** Expand a `~` prefix and resolve a relative path against *base*. */
+function resolveUserPath(base, value) {
+  if (typeof value !== 'string' || value === '') throw new Error('unslop: ожидался непустой путь');
+  if (value === '~') return homedir();
+  if (value.startsWith('~/') || value.startsWith('~\\')) return join(homedir(), value.slice(2));
+  return isAbsolute(value) ? value : join(base, value);
+}
+
+/** Validate a voice name before it becomes a path segment. */
+function assertVoiceName(name) {
+  if (typeof name !== 'string') throw new Error('unslop: имя голоса должно быть строкой');
+  if (name !== name.trim() || name === '' || name.endsWith('.') || !VOICE_NAME_RE.test(name)) {
+    throw new Error('unslop: имя голоса — 1–64 символа A-Z, a-z, 0-9, точка, _ или -, начиная с буквы или цифры');
+  }
+  if (RESERVED_VOICE_NAMES.has(name.split('.')[0].toUpperCase())) {
+    throw new Error(`unslop: имя голоса ${JSON.stringify(name)} зарезервировано Windows`);
+  }
+  return name;
+}
+
+/** @returns {string} path to one voice directory. */
+function voicePath(root, name) {
+  return join(root, assertVoiceName(name));
+}
+
+/** Resolve the impostor corpus (tool arg, config, or vendored default). */
+function resolveImpostors(config, args, base) {
+  const fromArg = typeof args.impostors === 'string' ? args.impostors.trim() : '';
+  const configured = fromArg !== '' ? fromArg : config.impostorsRoot;
+  return resolveUserPath(base, configured !== '' ? configured : DEFAULT_IMPOSTORS);
+}
+
+/** Run one voice helper with the longer voice timeout. */
+function runVoice(config, script, args, signal) {
+  return runScript(config, script, args, undefined, signal, config.voiceTimeoutMs);
+}
+
+/** Throw a useful error for a failed helper call. */
+function voiceFailure(result, label) {
+  const detail = clean(result.stderr) || clean(result.stdout) || `exit ${result.code}`;
+  return new Error(`unslop: ${label}: ${detail}`);
+}
+
+/** Run a voice helper and parse its JSON stdout. */
+async function runVoiceJson(config, script, args, signal, label) {
+  const result = await runVoice(config, script, args, signal);
+  if (result.code !== 0) throw voiceFailure(result, label);
+  const json = extractJson(result.stdout);
+  if (json === undefined) throw new Error(`unslop: ${label}: нет JSON в ответе`);
+  return json;
+}
+
+/** Read the candidate/draft from args.text or args.path, resolving *path* against the session cwd. */
+async function readVoiceInput(args, base) {
+  if (typeof args.text === 'string' && args.text.trim() !== '') return { text: args.text, source: 'text' };
+  if (typeof args.path === 'string' && args.path !== '') {
+    const path = resolveUserPath(base, args.path);
+    return { text: await readFile(path, 'utf8'), source: path };
+  }
+  return undefined;
+}
+
+/** Complete one prompt through the configured LLM route. */
+async function completeWithLlm(ctx, config, system, user, signal) {
+  const llm = ctx.get('llm');
+  if (llm === undefined || typeof llm.stream !== 'function') throw new Error('unslop: сервис llm недоступен');
+  const stream = llm.stream({
+    provider: config.llmProvider,
+    model: config.llmModel,
+    messages: [
+      { role: 'system', content: [{ type: 'text', text: system }], source: { kind: 'system-prompt' } },
+      { role: 'user', content: [{ type: 'text', text: user }], source: { kind: 'user' } },
+    ],
+    maxTokens: config.maxTokens,
+    signal,
+  });
+  let output = '';
+  for await (const chunk of stream) {
+    signal?.throwIfAborted();
+    if (chunk?.type === 'text-delta' && typeof chunk.text === 'string') output += chunk.text;
+    if (chunk?.type === 'finish' && chunk.reason?.kind === 'error') {
+      throw new Error(chunk.reason.failure?.message ?? 'unslop: LLM упал');
+    }
+  }
+  const text = output.trim();
+  if (text === '') throw new Error('unslop: LLM вернул пустой текст');
+  return text;
+}
+
+/** List taught voices under *root* using profile metadata only. */
+async function listVoices(root) {
+  if (!existsSync(root)) return [];
+  const entries = await readdir(root, { withFileTypes: true });
+  const voices = [];
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
+    let name;
+    try {
+      name = assertVoiceName(entry.name);
+    } catch {
+      continue;
+    }
+    const directory = join(root, name);
+    const info = {
+      name,
+      path: directory,
+      hasProfile: existsSync(join(directory, 'profile.json')),
+      hasCard: existsSync(join(directory, 'card.md')),
+      docs: null,
+      words: null,
+      lowConfidence: null,
+      situations: [],
+    };
+    if (info.hasProfile) {
+      try {
+        const profile = JSON.parse(await readFile(join(directory, 'profile.json'), 'utf8'));
+        info.docs = profile?.metadata?.doc_count ?? null;
+        info.words = profile?.metadata?.total_words ?? null;
+        info.lowConfidence = profile?.metadata?.low_confidence ?? null;
+      } catch {
+        // Keep the entry visible even if its profile is corrupt.
+      }
+    }
+    if (info.hasCard) {
+      const sheets = join(directory, 'card');
+      if (existsSync(sheets)) {
+        info.situations = (await readdir(sheets))
+          .filter((file) => file.endsWith('.md'))
+          .map((file) => file.slice(0, -3))
+          .sort();
+      }
+    }
+    voices.push(info);
+  }
+  return voices;
 }
 
 /** Strip ANSI escapes. */
@@ -487,6 +675,261 @@ export function apply(ctx, rawConfig) {
     },
   );
 
+  const voiceNameSchema = {
+    type: 'string',
+    description: 'Имя голоса: 1–64 символа A–Z, a–z, 0–9, точка, _ или -, начиная с буквы или цифры.',
+  };
+  const voiceScopeSchema = {
+    type: 'string',
+    enum: ['project', 'chat'],
+    description: 'project — <cwd>/.unslop/voice; chat — изолированный кэш текущей сессии.',
+  };
+  const voiceSeedSchema = {
+    type: 'number',
+    description: `Зерно скоринга voice_score (по умолчанию ${config.voiceSeed}).`,
+  };
+
+  tool(
+    'unslop_voice_teach',
+    'Построить переиспользуемый голос из .txt/.md образцов: profile.json, слоистый card.md + card/<situation>.md и provenance.json в .unslop/voice/<name>/ (project) или в изолированном кэше сессии (chat). По умолчанию dry-run: возвращает план (документы, слова, coverage, low-confidence) и НИЧЕГО не пишет. Запись только при apply:true и confirm:true после подтверждения пользователем; существующий голос заменяется только с overwrite:true. CLI: python/scripts/voice_teach.py <name> --samples DIR --apply --yes.',
+    {
+      type: 'object',
+      properties: {
+        name: voiceNameSchema,
+        samplesDir: { type: 'string', description: 'Папка с .txt/.md образцами (рекурсивно).' },
+        scope: voiceScopeSchema,
+        background: { type: 'string', description: 'Опциональный same-genre корпус для калибровки function words.' },
+        apply: { type: 'boolean', description: 'Записать голос. Требует confirm:true.' },
+        confirm: { type: 'boolean', description: 'Подтверждение пользователя на запись.' },
+        overwrite: { type: 'boolean', description: 'Заменить существующий голос (только вместе с apply).' },
+      },
+      required: ['name', 'samplesDir'],
+      additionalProperties: false,
+    },
+    async (args, exec) => {
+      const name = assertVoiceName(args.name);
+      const base = sessionCwd(exec);
+      const samplesDir = resolveUserPath(base, args.samplesDir);
+      if (!existsSync(samplesDir)) throw new Error(`unslop_voice_teach: папка образцов не найдена: ${samplesDir}`);
+      const { dir: root, scope } = scopeDirectory(config, args.scope === 'chat' ? 'chat' : 'project', exec);
+      const apply = args.apply === true;
+      if (apply && args.confirm !== true) {
+        throw new Error('unslop_voice_teach: это dry-run. Чтобы записать голос, передайте apply:true вместе с confirm:true после явного подтверждения пользователя.');
+      }
+      const cli = [name, '--samples', samplesDir, '--root', root];
+      if (typeof args.background === 'string' && args.background.trim() !== '') {
+        cli.push('--background', resolveUserPath(base, args.background));
+      }
+      if (apply) cli.push('--apply', '--yes');
+      if (args.overwrite === true) cli.push('--overwrite');
+      const json = await runVoiceJson(config, 'voice_teach.py', cli, exec.signal, 'voice_teach');
+      return JSON.stringify({ scope, root, ...json }, null, 2);
+    },
+  );
+
+  tool(
+    'unslop_voice_mimic',
+    'Написать или переписать текст в обученном голосе: читает card.md + card/<situation>.md, генерирует черновик через LLM, затем прогоняет voice_score.py по impostor-корпусу, сканеры unslop и (для rewrite) preservation/diff. Ничего не пишет без apply:true + confirm:true + outputPath; dryRun:true возвращает собранный промпт без вызова LLM. Голос — ориентир, а не отмена removal-гейтов.',
+    {
+      type: 'object',
+      properties: {
+        name: voiceNameSchema,
+        scope: voiceScopeSchema,
+        situation: { type: 'string', description: 'Ситуация из card/<situation>.md; если листа нет — предупреждение, без выдумывания.' },
+        instruction: { type: 'string', description: 'Что написать (для draft-режима).' },
+        text: { type: 'string', description: 'Черновик для rewrite-режима (приоритетнее path).' },
+        path: { type: 'string', description: 'Путь к черновику для rewrite-режима.' },
+        genre: { type: 'string', description: 'Жанр для сканеров: prose|docs|social|academic.' },
+        seed: voiceSeedSchema,
+        impostors: { type: 'string', description: 'Папка impostor-корпуса (по умолчанию вендоренный пул).' },
+        dryRun: { type: 'boolean', description: 'Вернуть карточку и промпт, не вызывая LLM.' },
+        apply: { type: 'boolean', description: 'Записать черновик в outputPath. Требует confirm:true.' },
+        confirm: { type: 'boolean', description: 'Подтверждение пользователя на запись файла.' },
+        outputPath: { type: 'string', description: 'Куда записать черновик (только с apply:true).' },
+        overwrite: { type: 'boolean', description: 'Перезаписать существующий outputPath.' },
+        force: { type: 'boolean', description: 'Записать даже при провале preservation/copy-гейта (осознанно).' },
+        strict: { type: 'boolean', description: 'Строгий preservation-гейт для rewrite.' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+    async (args, exec) => {
+      const name = assertVoiceName(args.name);
+      const base = sessionCwd(exec);
+      const { dir: root, scope } = scopeDirectory(config, args.scope === 'chat' ? 'chat' : 'project', exec);
+      const voice = voicePath(root, name);
+      if (!existsSync(join(voice, 'profile.json')) || !existsSync(join(voice, 'card.md'))) {
+        throw new Error(`unslop_voice_mimic: голос "${name}" не найден в ${voice}; сначала выполните unslop_voice_teach`);
+      }
+      const input = await readVoiceInput(args, base);
+      const instruction = typeof args.instruction === 'string' ? args.instruction.trim() : '';
+      if (input === undefined && instruction === '') {
+        throw new Error('unslop_voice_mimic: нужен text/path (rewrite) или instruction (draft)');
+      }
+      const apply = args.apply === true;
+      if (apply && args.confirm !== true) {
+        throw new Error('unslop_voice_mimic: запись файла требует apply:true вместе с confirm:true после явного подтверждения пользователя.');
+      }
+      if (apply && (typeof args.outputPath !== 'string' || args.outputPath.trim() === '')) {
+        throw new Error('unslop_voice_mimic: для записи нужен outputPath');
+      }
+      const seed = Number.isSafeInteger(args.seed) && args.seed >= 0 ? args.seed : config.voiceSeed;
+      const impostors = resolveImpostors(config, args, base);
+      if (!existsSync(impostors)) throw new Error(`unslop_voice_mimic: impostor-корпус не найден: ${impostors}`);
+      const dir = await mkdtemp(join(tmpdir(), 'dsh-unslop-'));
+      try {
+        let draftPath;
+        if (input !== undefined) draftPath = await writeTemp(dir, 'draft.txt', input.text);
+        const prepareArgs = ['prepare', '--name', name, '--root', root, '--seed', String(seed), '--impostors', impostors];
+        if (draftPath !== undefined) prepareArgs.push('--draft', draftPath);
+        if (instruction !== '') prepareArgs.push('--instruction', instruction);
+        if (typeof args.situation === 'string' && args.situation !== '') prepareArgs.push('--situation', args.situation);
+        const prepared = await runVoiceJson(config, 'voice_mimic.py', prepareArgs, exec.signal, 'voice_mimic prepare');
+
+        if (args.dryRun === true) {
+          return JSON.stringify({ scope, root, dryRun: true, applied: false, prepared }, null, 2);
+        }
+
+        const draft = await completeWithLlm(ctx, config, prepared.system, prepared.user, exec.signal);
+        const candidatePath = await writeTemp(dir, 'candidate.md', draft);
+        const scored = await runVoiceJson(config, 'voice_mimic.py', [
+          'score', '--name', name, '--root', root, '--candidate', candidatePath,
+          '--impostors', impostors, '--seed', String(seed),
+        ], exec.signal, 'voice_mimic score');
+        const scan = summarizeScan(await scanText(config, { text: draft }, { genre: args.genre }, exec.signal));
+
+        let preservation;
+        let diff;
+        if (input !== undefined) {
+          const originalPath = await writeTemp(dir, 'original.txt', input.text);
+          const checked = await runScript(config, 'validate_preservation.py',
+            [...(args.strict === true ? ['--strict'] : []), originalPath, candidatePath], undefined, exec.signal);
+          preservation = extractJson(checked.stdout) ?? { error: clean(checked.stderr) || 'no JSON' };
+          const changed = await runScript(config, 'diff_check.py', [originalPath, candidatePath], undefined, exec.signal);
+          diff = extractJson(changed.stdout) ?? { error: clean(changed.stderr) || 'no JSON' };
+        }
+
+        const score = scored.score;
+        const factsOk = preservation === undefined ? null : preservation?.passed === true;
+        const copyViolation = score?.copy_gate?.violation === true;
+        const blockedReasons = [];
+        if (factsOk === false) blockedReasons.push('preservation gate failed');
+        if (copyViolation) blockedReasons.push('copy gate violation');
+
+        let applied = null;
+        let blocked = null;
+        if (apply) {
+          if (blockedReasons.length > 0 && args.force !== true) {
+            blocked = `unslop_voice_mimic: ${blockedReasons.join('; ')}; запись отменена, передайте force:true только осознанно`;
+          } else {
+            const target = resolveUserPath(base, args.outputPath);
+            if (existsSync(target) && args.overwrite !== true) {
+              throw new Error(`unslop_voice_mimic: ${target} уже существует; передайте overwrite:true`);
+            }
+            await mkdir(dirname(target), { recursive: true });
+            await writeFile(target, draft, 'utf8');
+            applied = { path: target, bytes: Buffer.byteLength(draft, 'utf8') };
+          }
+        }
+
+        return JSON.stringify({
+          scope,
+          root,
+          dryRun: false,
+          applied,
+          blocked,
+          source: input?.source ?? null,
+          voice: {
+            name,
+            situation: prepared.situation,
+            covered: prepared.covered,
+            low_confidence: prepared.low_confidence,
+            uncovered: prepared.uncovered,
+            warnings: prepared.warnings,
+          },
+          draft,
+          score,
+          gates: {
+            preservation,
+            diff,
+            copyGate: score?.copy_gate ?? null,
+            slop: {
+              phrase: scan.phrase?.total ?? null,
+              phraseHard: scan.phrase?.hard ?? null,
+              structure: scan.structure?.total ?? null,
+            },
+            note: 'Сканеры дают кандидатов, не приговор; voice composite — ориентир. A mimic that trips a slop gate is rejected.',
+          },
+        }, null, 2);
+      } finally {
+        await rm(dir, { recursive: true, force: true }).catch(() => {});
+      }
+    },
+  );
+
+  tool(
+    'unslop_voice_score',
+    'Проверить, насколько текст похож на обученный голос: voice_score.py по профилю и impostor-корпусу (composite, GI, z-scores, copy-gate). Ничего не меняет и не пишет — только чтение и временный файл.',
+    {
+      type: 'object',
+      properties: {
+        name: voiceNameSchema,
+        scope: voiceScopeSchema,
+        text: { type: 'string', description: 'Текст для проверки (приоритетнее path).' },
+        path: { type: 'string', description: 'Путь к тексту для проверки.' },
+        seed: voiceSeedSchema,
+        impostors: { type: 'string', description: 'Папка impostor-корпуса (по умолчанию вендоренный пул).' },
+        samples: { type: 'string', description: 'Образцы для copy-gate (по умолчанию samples голоса).' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+    async (args, exec) => {
+      const name = assertVoiceName(args.name);
+      const base = sessionCwd(exec);
+      const { dir: root, scope } = scopeDirectory(config, args.scope === 'chat' ? 'chat' : 'project', exec);
+      const voice = voicePath(root, name);
+      if (!existsSync(join(voice, 'profile.json')) || !existsSync(join(voice, 'card.md'))) {
+        throw new Error(`unslop_voice_score: голос "${name}" не найден в ${voice}; сначала выполните unslop_voice_teach`);
+      }
+      const input = await readVoiceInput(args, base);
+      if (input === undefined) throw new Error('unslop_voice_score: нужен text или path');
+      const seed = Number.isSafeInteger(args.seed) && args.seed >= 0 ? args.seed : config.voiceSeed;
+      const impostors = resolveImpostors(config, args, base);
+      if (!existsSync(impostors)) throw new Error(`unslop_voice_score: impostor-корпус не найден: ${impostors}`);
+      const dir = await mkdtemp(join(tmpdir(), 'dsh-unslop-'));
+      try {
+        const candidatePath = await writeTemp(dir, 'candidate.md', input.text);
+        const cli = ['score', '--name', name, '--root', root, '--candidate', candidatePath, '--impostors', impostors, '--seed', String(seed)];
+        if (typeof args.samples === 'string' && args.samples.trim() !== '') {
+          cli.push('--samples', resolveUserPath(base, args.samples));
+        }
+        const result = await runVoice(config, 'voice_mimic.py', cli, exec.signal);
+        if (result.code !== 0) throw voiceFailure(result, 'voice_score');
+        const json = extractJson(result.stdout);
+        if (json === undefined) throw new Error('unslop: voice_score: нет JSON в ответе');
+        return JSON.stringify({ scope, root, source: input.source, ...json }, null, 2);
+      } finally {
+        await rm(dir, { recursive: true, force: true }).catch(() => {});
+      }
+    },
+  );
+
+  tool(
+    'unslop_voice_list',
+    'Перечислить обученные голоса в области project или chat: имя, наличие profile/card, документы и слова, low-confidence, покрытые ситуации. Только чтение.',
+    {
+      type: 'object',
+      properties: { scope: voiceScopeSchema },
+      additionalProperties: false,
+    },
+    async (args, exec) => {
+      const { dir: root, scope } = scopeDirectory(config, args.scope === 'chat' ? 'chat' : 'project', exec);
+      const voices = await listVoices(root);
+      return JSON.stringify({ scope, root, voices }, null, 2);
+    },
+  );
+
   tool(
     'unslop_guide',
     'Доктрина unslop (SKILL.md): четыре команды teach/cleanup/rewrite/mimic, три слоя детекции, что защищается, гейты и границы доказательности. Прочитайте перед серией переписываний.',
@@ -503,3 +946,17 @@ export function apply(ctx, rawConfig) {
     },
   );
 }
+
+/** Test-only access to the pure helpers (no host services needed). */
+export const __internals = {
+  resolveConfig,
+  resolvePython,
+  scopeDirectory,
+  sessionCwd,
+  assertVoiceName,
+  resolveUserPath,
+  voicePath,
+  resolveImpostors,
+  listVoices,
+  DEFAULT_IMPOSTORS,
+};

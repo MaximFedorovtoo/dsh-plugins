@@ -346,8 +346,10 @@ dsh plugin --profile desktop add ruflo
 
 Обёртка скила [theclaymethod/unslop](https://github.com/theclaymethod/unslop): три слоя
 детерминированных сканеров AI-паттернов, извлечение охраняемых фактов, preservation-гейты,
-suggest-предложения с контрактными проверками и LLM-перепись, которая обязана сохранить
-числа, имена, цитаты и регистр. Только английский.
+suggest-предложения с контрактными проверками, LLM-перепись, которая обязана сохранить
+числа, имена, цитаты и регистр, и voice teach/mimic: профиль + слоистая карточка в
+`.unslop/voice/<name>/`, скоринг по impostor-пулу и запись только после подтверждения.
+Только английский.
 
 ```powershell
 dsh plugin --profile desktop add https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-unslop

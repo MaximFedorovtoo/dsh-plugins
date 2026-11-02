@@ -1,5 +1,5 @@
 # unslop for DSH: deterministic AI-writing scanners + preservation gates +
-# an LLM rewrite that must keep facts and do no harm.
+# an LLM rewrite that must keep facts and do no harm, plus voice teach/mimic.
 - insert:
     - id: unslop
       name: dsh-unslop
@@ -15,3 +15,11 @@
         llmProvider: deepseek-account
         llmModel: deepseek-flash
         maxTokens: 4000
+        # Voice teach/mimic: '' = <cwd>/.unslop/voice (project scope)
+        voiceRoot: ""
+        # Per-chat voice roots live under <chatRoot>/<session>/.unslop/voice
+        chatRoot: ""
+        # '' = <plugin>/python/evals/fixtures/voice/impostors
+        impostorsRoot: ""
+        voiceSeed: 7
+        voiceTimeoutMs: 120000
