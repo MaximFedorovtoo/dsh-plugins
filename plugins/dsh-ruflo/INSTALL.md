@@ -52,6 +52,12 @@ ruflo_memory {scope:"chat", action:"search", query:"тест"}
     allowRaw: true
 ```
 
+
+
+## 7. Исполнитель DeepSeek
+
+Ruflo не исполняет задачи сам (нужен Anthropic API или Claude Code). В DSH исполнитель — DeepSeek: вызывайте `ruflo_execute {scope:"project", taskId:"..."}` — плагин поднимет DSH-субагента с моделью DeepSeek. Нужны смонтированные Agent Teams (входит в базовый профиль DSH).
+
 ## 6. Сброс состояния
 
 - Чат: удалить `<DSH_HOME>/cache/ruflo/chats/<id-сессии>`.

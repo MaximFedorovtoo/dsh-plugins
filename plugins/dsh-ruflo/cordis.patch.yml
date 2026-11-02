@@ -18,3 +18,8 @@
         initTimeoutMs: 180000
         # Expose ruflo_raw for commands without a dedicated wrapper
         allowRaw: true
+        # Executor bridge: Ruflo has no DeepSeek runtime, so ruflo_execute
+        # starts a DSH subagent (DeepSeek model) for a Ruflo task.
+        subagentProvider: spawn
+        # 0 = the executor child may not delegate further subagents.
+        executeMaxDepth: 0

@@ -89,3 +89,12 @@ MIT. Ruflo is MIT, © rUv (ruvnet).
 ## DeepSeek Harness init (0.3.0)
 
 `ruflo_init` initializes for **DSH**, not Claude Code: it runs `ruflo init --codex --skip-claude`, so the project gets `AGENTS.md` + `.agents/` + `.claude-flow/` and **no** `.claude/` directory. After init the plugin appends a “Ruflo in DeepSeek Harness” section to `AGENTS.md`: the DSH agent is told to use the `ruflo_*` tools (project/chat scopes) instead of Claude Code slash commands. Use `force: true` to migrate an existing Claude-mode initialization; memory and swarm data are preserved.
+## Executor: DeepSeek via DSH subagents (0.4.0)
+
+Ruflo is a coordinator and memory, not an executor: its own agents need an Anthropic API key or Claude Code (`claude -p`), so with neither a DeepSeek runtime, a task stays pending and its Ruflo agents stay idle. DSH already has the DeepSeek runtime, so the plugin bridges the two:
+
+- `ruflo_execute { scope, taskId | description }` picks a pending Ruflo task (or creates one), starts a **DSH subagent** with the parent's DeepSeek model, hands it the task, and asks it to store the result in Ruflo memory (`task/<id>/result`) plus an executor mapping (`task/<id>/executor`).
+- `delivery: parent` — the tool returns the child id immediately and the completion notice arrives in the chat; the child works in the scope folder (`cwd`).
+- Config: `subagentProvider` (`spawn` by default) and `executeMaxDepth` (`0` — the executor cannot delegate further).
+
+Ruflo swarm readiness only means coordination state is initialized; execution happens in DSH.

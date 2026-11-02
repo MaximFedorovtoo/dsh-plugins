@@ -84,6 +84,10 @@ function resolveConfig(raw) {
     timeoutMs: Number.isSafeInteger(source.timeoutMs) && source.timeoutMs > 0 ? source.timeoutMs : 60000,
     initTimeoutMs: Number.isSafeInteger(source.initTimeoutMs) && source.initTimeoutMs > 0 ? source.initTimeoutMs : 180000,
     allowRaw: source.allowRaw !== false,
+    // Executor bridge: Ruflo has no DeepSeek runtime of its own, so tasks are
+    // executed by a DSH subagent (DeepSeek model) spawned through ctx.subagents.
+    subagentProvider: typeof source.subagentProvider === 'string' && source.subagentProvider !== '' ? source.subagentProvider : 'spawn',
+    executeMaxDepth: Number.isSafeInteger(source.executeMaxDepth) && source.executeMaxDepth >= 0 ? source.executeMaxDepth : 0,
   };
 }
 
@@ -466,6 +470,96 @@ export function apply(ctx, rawConfig) {
       }
       const result = await runCli(config, { dir: where.dir, args: cliArgs, signal: exec.signal });
       return render(where, result);
+    },
+  );
+
+  tool(
+    'ruflo_execute',
+    'Запустить DeepSeek-исполнителя для задачи Ruflo: берёт pending-задачу (или taskId/description), поднимает DSH-субагента (модель DeepSeek через Agent Teams), даёт ему задачу и просит сохранить итог в память Ruflo. Ruflo остаётся координатором и памятью; исполняет задачу DSH, а не Anthropic/Claude Code.',
+    {
+      type: 'object',
+      properties: {
+        scope: { type: 'string', enum: ['project', 'chat'], description: 'Область: project или chat.' },
+        taskId: { type: 'string', description: 'ID задачи Ruflo (status/list).' },
+        description: { type: 'string', description: 'Описание задачи, если taskId не нужен (создастся новая задача Ruflo).' },
+        provider: { type: 'string', description: 'Провайдер субагентов DSH (по умолчанию spawn).' },
+      },
+      required: ['scope'],
+      additionalProperties: false,
+    },
+    async (args, exec) => {
+      const where = scopeDirectory(config, args.scope === 'chat' ? 'chat' : 'project', exec);
+      let taskId = typeof args.taskId === 'string' && args.taskId !== '' ? args.taskId : undefined;
+      let description = typeof args.description === 'string' && args.description !== '' ? args.description : undefined;
+
+      if (taskId === undefined && description === undefined) {
+        const listed = await runCli(config, { dir: where.dir, args: ['task', 'list', '--all', '--format', 'json'], signal: exec.signal });
+        const json = extractJson(listed.stdout);
+        const tasks = Array.isArray(json?.tasks) ? json.tasks : [];
+        const pending = tasks.find((task) => ['pending', 'in_progress', 'running'].includes(String(task.status ?? '').toLowerCase()));
+        if (pending === undefined) throw new Error('ruflo_execute: нет pending-задач Ruflo; передайте taskId или description');
+        taskId = typeof pending.taskId === 'string' ? pending.taskId : undefined;
+        description = typeof pending.description === 'string' ? pending.description : undefined;
+      } else if (taskId !== undefined && description === undefined) {
+        const detail = await runCli(config, { dir: where.dir, args: ['task', 'status', taskId, '--format', 'json'], signal: exec.signal });
+        const json = extractJson(detail.stdout);
+        const task = json?.task ?? json;
+        description = typeof task?.description === 'string' ? task.description : undefined;
+        if (description === undefined) throw new Error(`ruflo_execute: не удалось прочитать описание задачи ${taskId}`);
+      } else if (taskId === undefined && description !== undefined) {
+        const created = await runCli(config, {
+          dir: where.dir,
+          args: ['task', 'create', '-t', typeof args.type === 'string' && args.type !== '' ? args.type : 'implementation', '-d', description, '--format', 'json'],
+          signal: exec.signal,
+        });
+        const json = extractJson(created.stdout);
+        taskId = typeof json?.taskId === 'string' ? json.taskId : undefined;
+      }
+
+      const subagents = ctx.get('subagents');
+      if (subagents === undefined || typeof subagents.startActivation !== 'function') {
+        throw new Error('ruflo_execute: сервис subagents недоступен — включите Agent Teams (dsh-experimental-agent-team-profile)');
+      }
+      const parent = exec.agent;
+      if (parent === undefined) throw new Error('ruflo_execute: нужен живой агент-родитель (вызовите инструмент из чата)');
+      const provider = typeof args.provider === 'string' && args.provider !== '' ? args.provider : config.subagentProvider;
+      const taskLabel = taskId === undefined ? 'adhoc' : taskId;
+      const prompt = [
+        `Ты — DeepSeek-исполнитель задачи, которую координирует Ruflo (плагин dsh-ruflo). Рабочая папка: ${where.dir}.`,
+        `Область Ruflo: ${where.scope}.`,
+        taskId === undefined ? 'Задача (ad-hoc):' : `Задача ${taskId}:`,
+        description,
+        '',
+        'Выполни задачу инструментами DSH: прочитай нужные файлы, внеси изменения, проверь результат. Не коммить и не пушить, если это не требуется задачей.',
+        'В конце сохрани краткий итог в память Ruflo: вызов ruflo_memory с scope "' + where.scope + '", action "store", key "task/' + taskLabel + '/result", value "<= 2000 символов: что сделано и как проверено>", provenance "agent_output".',
+        'Верни отчёт: что изменено, как проверено, что осталось.',
+      ].join('\n');
+      const activation = await subagents.startActivation({
+        provider,
+        label: `ruflo:${taskLabel}`,
+        request: { parent, prompt, cwd: where.dir, maxDepth: config.executeMaxDepth },
+        signal: exec.signal,
+        delivery: 'parent',
+      });
+      try {
+        await runCli(config, {
+          dir: where.dir,
+          args: ['memory', 'store', '-k', `task/${taskLabel}/executor`, '--value', `dsh-subagent:${activation.childId}`, '--provenance', 'agent_output', '--format', 'json'],
+          signal: exec.signal,
+        });
+      } catch {
+        // The mapping is best-effort; the child still runs.
+      }
+      return JSON.stringify({
+        scope: where.scope,
+        cwd: where.dir,
+        taskId: taskId ?? null,
+        description,
+        provider,
+        childId: activation.childId,
+        messageId: activation.messageId ?? null,
+        note: 'DSH-субагент (модель DeepSeek) запущен; итог придёт уведомлением в этот чат и будет сохранён в память Ruflo. Ruflo — координатор/память, исполнитель — DSH.',
+      }, null, 2);
     },
   );
 
