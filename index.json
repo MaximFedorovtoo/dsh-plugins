@@ -499,9 +499,9 @@
                                       "zh":  "unslop — 去 AI 化写作"
                                   },
                         "description":  {
-                                            "en":  "De-AI writing for agents: deterministic phrase/structure/silhouette scanners, protected-fact extraction, preservation gates, suggestion checks and an LLM rewrite that must keep meaning. Vendors theclaymethod/unslop.",
-                                            "ru":  "Де-AI текста для агентов: детерминированные сканеры phrase/structure/silhouette, извлечение охраняемых фактов, preservation-гейты, проверка suggest-предложений и LLM-перепись с сохранением смысла. Вендорит theclaymethod/unslop.",
-                                            "zh":  "面向代理的去 AI 化写作：phrase/structure/silhouette 确定性扫描器、受保护事实提取、保真校验、建议门禁，以及保持含义的 LLM 改写。内置 theclaymethod/unslop。"
+                                            "en":  "De-AI writing for agents: deterministic phrase/structure/silhouette scanners, protected-fact extraction, preservation gates, suggestion checks, an LLM rewrite that must keep meaning, and voice teach/mimic with layered cards and impostor scoring. Vendors theclaymethod/unslop.",
+                                            "ru":  "Де-AI текста для агентов: детерминированные сканеры phrase/structure/silhouette, извлечение охраняемых фактов, preservation-гейты, проверка suggest-предложений, LLM-перепись с сохранением смысла и voice teach/mimic со слоистыми карточками и impostor-скорингом. Вендорит theclaymethod/unslop.",
+                                            "zh":  "面向代理的去 AI 化写作：phrase/structure/silhouette 确定性扫描器、受保护事实提取、保真校验、建议门禁、保持含义的 LLM 改写，以及带分层卡片和冒充者评分的语音 teach/mimic。内置 theclaymethod/unslop。"
                                         },
                         "icon":  "icons/dsh-unslop.svg",
                         "author":  "Maxim Fedorov (MaximFedorovtoo)",
@@ -511,6 +511,19 @@
                                            "directory":  "plugins/dsh-unslop"
                                        },
                         "versions":  [
+                                         {
+                                             "version":  "0.3.0",
+                                             "publishTimestamp":  1793613307,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "c1a1849b15f17d18deb2fa044d54e58724397f40",
+                                                            "path":  "plugins/dsh-unslop"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         },
                                          {
                                              "version":  "0.2.0",
                                              "publishTimestamp":  1793609099,
