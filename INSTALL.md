@@ -341,3 +341,17 @@ dsh plugin --profile desktop add ruflo
 области; `ruflo_init` нужен для полной инициализации Ruflo (пишет `.claude-flow/`
 и `.claude/`). Подробности — в
 [`plugins/dsh-ruflo/README.ru.md`](plugins/dsh-ruflo/README.ru.md).
+
+## 14. Де-AI текста (`dsh-unslop`)
+
+Обёртка скила [theclaymethod/unslop](https://github.com/theclaymethod/unslop): три слоя
+детерминированных сканеров AI-паттернов, извлечение охраняемых фактов, preservation-гейты,
+suggest-предложения с контрактными проверками и LLM-перепись, которая обязана сохранить
+числа, имена, цитаты и регистр. Только английский.
+
+```powershell
+dsh plugin --profile desktop add https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-unslop
+```
+
+Перезапустите DSH. Python — встроенный, pip-зависимостей нет. Подробности — в
+[`plugins/dsh-unslop/README.ru.md`](plugins/dsh-unslop/README.ru.md).
