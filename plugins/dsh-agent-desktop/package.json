@@ -1,0 +1,53 @@
+{
+  "name": "dsh-agent-desktop",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Computer use for DSH agents: wraps the vercel-labs/agent-desktop CLI so the model can observe any desktop app through its OS accessibility tree and operate it by stable refs (snapshot, click, type, keys, clipboard, screenshots, windows, notifications).",
+  "license": "MIT",
+  "author": "Maxim Fedorov (Winkerok) <https://github.com/MaximFedorovtoo>",
+  "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-agent-desktop",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaximFedorovtoo/dsh-plugins.git",
+    "directory": "plugins/dsh-agent-desktop"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "computer-use",
+    "desktop-automation",
+    "accessibility",
+    "agent-desktop",
+    "windows",
+    "macos",
+    "linux"
+  ],
+  "engines": {
+    "dsh": ">=0.2.0 <0.3.0"
+  },
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.ru.md",
+    "INSTALL.md",
+    "INSTALL.en.md"
+  ],
+  "dependencies": {
+    "agent-desktop": "^1.0.2"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

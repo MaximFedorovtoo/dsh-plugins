@@ -1,0 +1,24 @@
+# Computer use for DSH agents through vercel-labs/agent-desktop.
+#
+# The plugin wraps the `agent-desktop` CLI (native accessibility-tree adapter
+# for macOS, Windows and Linux) into DSH tools. It is host-only; the CLI is
+# expected as the `agent-desktop` dependency of the profile.
+- insert:
+    - id: agent-desktop
+      name: dsh-agent-desktop
+      config:
+        # '' = resolve the platform binary from the profile's agent-desktop package
+        binary: ""
+        # Wall-clock budget for one CLI call.
+        timeoutMs: 30000
+        # Truncate very large JSON envelopes in tool output (snapshots can be big).
+        maxOutputChars: 20000
+        # Pass the DSH session id as the CLI snapshot namespace, so refs from one
+        # chat cannot collide with another chat's refs.
+        sessionScope: true
+        # Allow the generic `desktop_raw` escape hatch (all CLI commands except
+        # the four held-key/mouse commands the CLI refuses without a daemon).
+        allowRaw: true
+        # Default delivery for actions: false keeps the CLI headless (no pointer
+        # movement, no focus stealing).
+        headed: false

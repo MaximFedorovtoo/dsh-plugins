@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Computer use (agent-desktop)",
+    "description": "Lets the agent see and operate desktop applications through the OS accessibility tree: snapshots with stable refs, clicks, typing, keyboard, clipboard, screenshots, windows and notifications (macOS, Windows, Linux)."
+  }
+}
