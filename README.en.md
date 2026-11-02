@@ -1,6 +1,6 @@
 # DeepSeek Harness plugins: spend, screenshots, localization, Codex, instructions and portable projects
 
-Nine plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
+Ten plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 
 | Plugin | What it does | Runs on |
 |---|---|---|
@@ -13,6 +13,7 @@ Nine plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 | [`dsh-project-portability`](plugins/dsh-project-portability) | Exports a whole project into one `.dshpack` archive (files, every chat with its full history and context, attachments) and imports it on another computer so work continues in the same chats. | Windows, macOS, Linux |
 | [`dsh-voice-ru`](plugins/dsh-voice-ru) | Russian voice input: a "Voice" button in the composer input row (the old microphone spot) — local GigaAM recognition (CTC or e2e with punctuation) turns dictated theses into a coherent task with the project context and inserts it into the composer for review and manual sending. | Windows, macOS, Linux |
 | [`dsh-agent-desktop`](plugins/dsh-agent-desktop) | Computer use: the agent observes any desktop app through the OS accessibility tree and operates it by stable refs — snapshots, clicks, typing, keys, clipboard, screenshots, windows and notifications (wraps vercel-labs/agent-desktop). | Windows, macOS, Linux |
+| [`dsh-ruflo`](plugins/dsh-ruflo) | Ruflo for agents with a project or chat scope: semantic memory, tasks, swarms, agents and self-learning hooks (wraps the ruvnet/ruflo CLI); chat state is isolated per session. | Windows, macOS, Linux |
 
 All plugins are plain JavaScript with no dependencies and no build step. Installation is identical on every OS; the only platform limitation is screen capture in `dsh-screenshot` (see [platform support](#platform-support)).
 
@@ -143,7 +144,7 @@ dsh-plugins/
 └── INSTALL.en.md           # this guide's companion (English)
 ```
 
-All nine plugins live in this repository, each in its own folder under `plugins/`, with its own README and install guide.
+All ten plugins live in this repository, each in its own folder under `plugins/`, with its own README and install guide.
 
 ## License
 

@@ -364,6 +364,41 @@
                                                          }
                                          }
                                      ]
+                    },
+                    {
+                        "name":  "dsh-ruflo",
+                        "title":  {
+                                      "en":  "Ruflo (memory, tasks, swarm)",
+                                      "ru":  "Ruflo (память, задачи, swarm)",
+                                      "zh":  "Ruflo（记忆、任务、集群）"
+                                  },
+                        "description":  {
+                                            "en":  "Ruflo for agents with an explicit project or chat scope: memory with semantic search, tasks, swarms, agents and self-learning hooks from the ruvnet/ruflo CLI. Chat scope keeps its state isolated per session.",
+                                            "ru":  "Ruflo для агентов с явной областью проект или чат: память с семантическим поиском, задачи, swarm, агенты и self-learning хуки из CLI ruvnet/ruflo. Область чата хранит состояние изолированно для каждой сессии.",
+                                            "zh":  "为代理提供 Ruflo：支持按项目或按聊天的显式作用域，包括语义记忆、任务、集群、代理与自学习钩子（ruvnet/ruflo CLI），聊天作用域按会话隔离状态。"
+                                        },
+                        "icon":  "icons/dsh-ruflo.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-ruflo",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-ruflo"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "0.1.0",
+                                             "publishTimestamp":  1793607817,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "4ab22df330e3e2cc9391cee68ab78dec19df0407",
+                                                            "path":  "plugins/dsh-ruflo"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
                     }
                 ]
 }

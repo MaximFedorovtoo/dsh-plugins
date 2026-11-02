@@ -325,3 +325,19 @@ dsh plugin --profile desktop add agent-desktop
 Если pnpm блокирует postinstall (`ERR_PNPM_IGNORED_BUILDS`), добавьте
 `strictDepBuilds: false` в `%USERPROFILE%\.dsh\profiles\desktop\pnpm-workspace.yaml`.
 Подробности и инструменты — в [`plugins/dsh-agent-desktop/README.ru.md`](plugins/dsh-agent-desktop/README.ru.md).
+
+## 13. Ruflo: память и задачи для проекта или чата (`dsh-ruflo`)
+
+Обёртка [ruvnet/ruflo](https://github.com/ruvnet/ruflo) с явной областью:
+`project` — память/задачи/swarm рядом с проектом, `chat` — изолированная папка
+сессии в `<DSH_HOME>/cache/ruflo/chats/<id>`.
+
+```powershell
+dsh plugin --profile desktop add https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-ruflo
+dsh plugin --profile desktop add ruflo
+```
+
+Перезапустите DSH. Первый `ruflo_memory` создаёт локальную БД памяти в папке
+области; `ruflo_init` нужен для полной инициализации Ruflo (пишет `.claude-flow/`
+и `.claude/`). Подробности — в
+[`plugins/dsh-ruflo/README.ru.md`](plugins/dsh-ruflo/README.ru.md).
