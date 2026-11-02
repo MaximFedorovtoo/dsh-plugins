@@ -16,6 +16,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 /** Plugin row name in `cordis.patch.yml`. */
 export const name = 'ruflo';
@@ -89,6 +90,8 @@ function resolveConfig(raw) {
     subagentProvider: typeof source.subagentProvider === 'string' && source.subagentProvider !== '' ? source.subagentProvider : 'spawn',
     executeMaxDepth: Number.isSafeInteger(source.executeMaxDepth) && source.executeMaxDepth >= 0 ? source.executeMaxDepth : 1,
     executeTimeoutMs: Number.isSafeInteger(source.executeTimeoutMs) && source.executeTimeoutMs > 0 ? source.executeTimeoutMs : 600000,
+    executeMaxTokens: Number.isSafeInteger(source.executeMaxTokens) && source.executeMaxTokens > 0 ? source.executeMaxTokens : 4000,
+    executeCorePath: typeof source.executeCorePath === 'string' ? source.executeCorePath.trim() : '',
   };
 }
 
@@ -171,6 +174,72 @@ function extractJson(text) {
     }
   }
   return best;
+}
+
+/** Resolve Ruflo's real LLM execution core (agent-execute-core.js). */
+function executeCorePath(config) {
+  if (typeof config.executeCorePath === 'string' && config.executeCorePath !== '' && existsSync(config.executeCorePath)) return config.executeCorePath;
+  const candidate = join(profileDir(), 'node_modules', '@claude-flow', 'cli', 'dist', 'src', 'mcp-tools', 'agent-execute-core.js');
+  if (existsSync(candidate)) return candidate;
+  throw new Error(`ruflo: не найден agent-execute-core (${candidate})`);
+}
+
+/**
+ * Execute one prompt through Ruflo's LLM core with the saved DeepSeek settings.
+ * The worker strips Anthropic/Ollama credentials and enforces api.deepseek.com.
+ */
+async function runExecutionWorker(config, settings, payload, signal) {
+  const node = nodeExecutable();
+  const worker = fileURLToPath(new URL('./agent-execute.mjs', import.meta.url));
+  const timeoutMs = config.executeTimeoutMs + 60000;
+  const stdout = await new Promise((resolve, reject) => {
+    let out = '';
+    let err = '';
+    let settled = false;
+    const child = spawn(node, [worker], { env: { ...process.env }, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+    const finish = (failure, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      if (failure !== undefined) reject(failure);
+      else resolve(value);
+    };
+    const onAbort = () => {
+      try {
+        child.kill();
+      } catch {
+        // already gone
+      }
+      finish(new Error('ruflo: исполнение отменено'));
+    };
+    const timer = setTimeout(() => {
+      try {
+        child.kill();
+      } catch {
+        // already gone
+      }
+      finish(new Error('ruflo: превышен таймаут исполнения'));
+    }, timeoutMs);
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      out += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      err += chunk;
+    });
+    child.on('error', (error) => finish(new Error(`ruflo: worker не запустился: ${error.message}`)));
+    child.on('close', () => finish(undefined, out));
+    child.stdin.end(JSON.stringify({ ...payload, settingsPath: settingsPath() }), 'utf8');
+    if (signal !== undefined) {
+      if (signal.aborted) onAbort();
+      else signal.addEventListener('abort', onAbort, { once: true });
+    }
+  });
+  const json = extractJson(stdout);
+  if (json === undefined) throw new Error('ruflo: worker вернул не JSON');
+  return json;
 }
 
 /** DeepSeek-only executor settings, entered through the plugin UI. */
@@ -686,21 +755,29 @@ export function apply(ctx, rawConfig) {
       const taskLabel = taskId === undefined ? 'adhoc' : taskId;
       const settings = await loadSettings(config);
       if (settings.apiKey !== '' && settings.apiKey !== undefined) {
-        // DeepSeek API executor: Ruflo's own agent runtime with the provider
-        // forced to its OpenAI-compatible client pointed at api.deepseek.com.
+        // DeepSeek API executor: Ruflo's own LLM core (agent-execute-core.js)
+        // called with the saved settings; the worker forces api.deepseek.com
+        // and strips every other provider credential.
         try {
           const baseUrl = assertDeepSeekEndpoint(settings.baseUrl);
-          const seconds = Math.max(60, Math.floor(config.executeTimeoutMs / 1000));
-          const spawned = await runCli(config, {
-            dir: where.dir,
-            args: ['agent', 'spawn', '-t', 'coder', '-p', 'openrouter', '-m', settings.model, '--task', description, '--timeout', String(seconds), '--format', 'json'],
-            timeoutMs: config.executeTimeoutMs + 60000,
-            signal: exec.signal,
-          });
-          const output = render(where, spawned, { tolerateError: true });
+          const result = await runExecutionWorker(config, settings, {
+            corePath: executeCorePath(config),
+            model: settings.model,
+            systemPrompt: 'Ты — исполнитель задач, которые координирует Ruflo. Работай по существу задачи, не добавляй лишнего. Если задача требует действий с файлами, опиши точный план и результат как сможешь без инструментов.',
+            prompt: description,
+            maxTokens: config.executeMaxTokens,
+            timeoutMs: config.executeTimeoutMs,
+          }, exec.signal);
+          if (result.success !== true) throw new Error(`DeepSeek API: ${String(result.error ?? 'unknown error')}`);
+          const output = String(result.output ?? '').trim();
           await runCli(config, {
             dir: where.dir,
-            args: ['memory', 'store', '-k', `task/${taskLabel}/executor`, '--value', `deepseek-api:${settings.model}`, '--provenance', 'agent_output', '--format', 'json'],
+            args: ['memory', 'store', '-k', `task/${taskLabel}/result`, '--value', output.slice(0, 8000), '--provenance', 'agent_output', '--format', 'json'],
+            signal: exec.signal,
+          }).catch(() => {});
+          await runCli(config, {
+            dir: where.dir,
+            args: ['memory', 'store', '-k', `task/${taskLabel}/executor`, '--value', `deepseek-api:${String(result.model ?? settings.model)}`, '--provenance', 'agent_output', '--format', 'json'],
             signal: exec.signal,
           }).catch(() => {});
           return JSON.stringify({
@@ -710,9 +787,10 @@ export function apply(ctx, rawConfig) {
             description,
             executor: 'deepseek-api',
             endpoint: baseUrl,
-            model: settings.model,
-            output: output.slice(-6000),
-            note: 'Задачу исполнил Ruflo-agent через DeepSeek API (api.deepseek.com). Только DeepSeek: Anthropic/Ollama-ключи вычищаются из окружения.',
+            model: result.model ?? settings.model,
+            usage: result.usage ?? null,
+            output,
+            note: 'Исполнено Ruflo LLM-core через api.deepseek.com (DeepSeek). Anthropic/Ollama-ключи вычищены из окружения. Итог сохранён в память Ruflo (task/<id>/result).',
           }, null, 2);
         } catch (error) {
           // Fall through to the DSH subagent (also DeepSeek) with the reason.
