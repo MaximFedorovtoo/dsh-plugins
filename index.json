@@ -6,9 +6,9 @@
                   "zh":  "MaximFedorovtoo 的 DSH 插件"
               },
     "description":  {
-                        "en":  "DeepSeek Harness plugins by MaximFedorovtoo: API spend, screenshot input, Russian localization, Codex import, AGENTS.md instructions and portable projects.",
-                        "ru":  "Плагины DSH от MaximFedorovtoo: расходы на API, скриншоты как ввод, русская локализация, перенос из Codex, инструкции AGENTS.md и переносимые проекты.",
-                        "zh":  "MaximFedorovtoo 的 DSH 插件：API 花费、截图输入、俄语本地化、Codex 迁移、AGENTS.md 指令与可移植项目。"
+                        "en":  "DeepSeek Harness plugins by MaximFedorovtoo: API spend, screenshot input, Russian localization, Codex import, AGENTS.md instructions and portable projects. Kimi provider routes.",
+                        "ru":  "Плагины DSH от MaximFedorovtoo: расходы на API, скриншоты как ввод, русская локализация, перенос из Codex, инструкции AGENTS.md и переносимые проекты. Маршруты провайдера Kimi.",
+                        "zh":  "MaximFedorovtoo 的 DSH 插件：API 花费、截图输入、俄语本地化、Codex 迁移、AGENTS.md 指令与可移植项目。Kimi 提供商路由。"
                     },
     "plugins":  [
                     {
@@ -545,6 +545,41 @@
                                                             "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
                                                             "commit":  "5ef3340545128cb0ea9dc55f1179896fc195be36",
                                                             "path":  "plugins/dsh-unslop"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
+                    },
+                    {
+                        "name":  "dsh-llm-kimi",
+                        "title":  {
+                                      "en":  "Kimi provider: subscription and API",
+                                      "ru":  "Kimi: подписка и API",
+                                      "zh":  "Kimi 订阅与 API 提供商"
+                                  },
+                        "description":  {
+                                            "en":  "Kimi in DeepSeek Harness through two provider routes: the paid Kimi Code subscription plan (kimi-code) and pay-per-token billing on the Kimi API platform (moonshot). Anthropic-compatible Messages protocol: streaming, tool calls, reasoning, images and effort levels; API keys are entered once on Settings -\u003e Models and stored write-only.",
+                                            "ru":  "Kimi в DeepSeek Harness двумя провайдерскими маршрутами: платная подписка Kimi Code (kimi-code) и оплата по токенам на платформе Kimi API (moonshot). Anthropic-совместимый Messages-протокол: потоковые ответы, вызовы инструментов, рассуждения, картинки и уровни effort; API-ключи вводятся один раз на странице Models и хранятся write-only.",
+                                            "zh":  "在 DeepSeek Harness 中接入 Kimi 的两条提供方路由：付费 Kimi Code 订阅（kimi-code）与 Kimi API 平台按量计费（moonshot）。兼容 Anthropic 的 Messages 协议：流式输出、工具调用、推理、图片与 effort 档位；API 密钥在 Models 页面一次录入并以只写方式保存。"
+                                        },
+                        "icon":  "icons/dsh-llm-kimi.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-llm-kimi",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-llm-kimi"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "1.0.0",
+                                             "publishTimestamp":  1793786777,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "9911d8a8cf9a0726fed9785afe38c28a8139d542",
+                                                            "path":  "plugins/dsh-llm-kimi"
                                                         },
                                              "engines":  {
                                                              "dsh":  "\u003e=0.2.0 \u003c0.3.0"
