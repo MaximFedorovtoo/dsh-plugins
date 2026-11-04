@@ -1,6 +1,6 @@
 # DeepSeek Harness plugins: spend, screenshots, localization, Codex, instructions and portable projects
 
-Eleven plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
+Twelve plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 
 | Plugin | What it does | Runs on |
 |---|---|---|
@@ -15,6 +15,7 @@ Eleven plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-ha
 | [`dsh-agent-desktop`](plugins/dsh-agent-desktop) | Computer use: the agent observes any desktop app through the OS accessibility tree and operates it by stable refs — snapshots, clicks, typing, keys, clipboard, screenshots, windows and notifications (wraps vercel-labs/agent-desktop). | Windows, macOS, Linux |
 | [`dsh-ruflo`](plugins/dsh-ruflo) | Ruflo for agents with a project or chat scope: semantic memory, tasks, swarms, agents and self-learning hooks (wraps the ruvnet/ruflo CLI); chat state is isolated per session. | Windows, macOS, Linux |
 | [`dsh-unslop`](plugins/dsh-unslop) | De-AI writing: deterministic phrase/structure/silhouette scanners, protected-fact extraction, preservation gates, suggestion checks, an LLM rewrite that keeps meaning, and voice teach/mimic with layered cards and impostor scoring (wraps theclaymethod/unslop). | Windows, macOS, Linux |
+| [`dsh-llm-kimi`](plugins/dsh-llm-kimi) | Kimi in DSH through two routes: the **Kimi Code** subscription (`kimi-code`, key from the Kimi Code console) and pay-per-token billing on the Kimi API platform (`moonshot`); Anthropic-compatible Messages protocol with streaming, tools, reasoning and images, keys entered on the Models page. | Windows, macOS, Linux |
 
 All plugins are plain JavaScript with no dependencies and no build step. Installation is identical on every OS; the only platform limitation is screen capture in `dsh-screenshot` (see [platform support](#platform-support)).
 
@@ -125,6 +126,23 @@ Both rows are configured in the profile's `cordis.patch.yml` (`~/.dsh/profiles/<
     includeAttachments: true
 ```
 
+`dsh-llm-kimi`:
+
+```yaml
+- id: llm-kimi
+  config:
+    providers:
+      kimi-code:                 # Kimi Code subscription
+        baseURL: https://api.kimi.ai/coding
+        models:
+          - id: k3.1-pro
+            contextWindow: 1048576   # Pro / Allegretto tiers and above
+      moonshot:                  # pay per token
+        apiKeyEnv: MOONSHOT_API_KEY
+```
+
+Kimi keys are entered on **Settings → Models** (rows "Kimi Code (подписка)" and "Kimi API (оплата по токенам)"), not in the patch: they are stored write-only in the credential store. `KIMI_CODE_API_KEY` and `MOONSHOT_API_KEY` work as fallbacks.
+
 Rates are USD per million tokens at peak hours; off-peak applies `offPeakFactor`. The platform totals include every client of the API key, so they are larger than the per-project sum by design.
 
 ## Repository layout
@@ -138,14 +156,15 @@ dsh-plugins/
 │   ├── dsh-codex-bridge/   # package dsh-codex-bridge (Codex import)
 │   ├── dsh-agents-md/      # package dsh-agents-md (global AGENTS.md instructions)
 │   ├── dsh-instructions/   # package dsh-instructions (instruction upload panel)
-│   └── dsh-project-portability/ # package dsh-project-portability (portable projects)
+│   ├── dsh-project-portability/ # package dsh-project-portability (portable projects)
+│   └── dsh-llm-kimi/       # package dsh-llm-kimi (Kimi: subscription and API)
 ├── icons/                  # icons for the Discover index
 ├── index.json              # plugin index for the Discover tab
 ├── INSTALL.md              # installation guide (Russian)
 └── INSTALL.en.md           # this guide's companion (English)
 ```
 
-All eleven plugins live in this repository, each in its own folder under `plugins/`, with its own README and install guide.
+All twelve plugins live in this repository, each in its own folder under `plugins/`, with its own README and install guide.
 
 ## License
 

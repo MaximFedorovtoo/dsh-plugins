@@ -1,0 +1,53 @@
+{
+  "name": "dsh-llm-kimi",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Kimi (Moonshot AI) provider routes for DeepSeek Harness: the paid Kimi Code subscription plan and the pay-per-token Kimi API platform, both over the Anthropic Messages protocol, with API keys managed from Settings -> Models.",
+  "license": "MIT",
+  "author": "Maxim Fedorov (Winkerok) <https://github.com/MaximFedorovtoo>",
+  "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-llm-kimi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaximFedorovtoo/dsh-plugins.git",
+    "directory": "plugins/dsh-llm-kimi"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "kimi",
+    "moonshot",
+    "kimi-code",
+    "llm",
+    "provider",
+    "anthropic",
+    "subscription"
+  ],
+  "engines": {
+    "dsh": ">=0.2.0 <0.3.0"
+  },
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "adapter.js",
+    "auth.js",
+    "catalog.js",
+    "config.js",
+    "wire.js",
+    "cordis.patch.yml",
+    "icon.svg",
+    "README.md",
+    "README.ru.md",
+    "scripts/install.mjs"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

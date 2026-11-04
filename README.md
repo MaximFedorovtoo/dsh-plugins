@@ -1,6 +1,6 @@
 # Плагины для DeepSeek Harness: расходы, скриншоты, локализация, Codex, инструкции и перенос проектов
 
-Одиннадцать плагинов для [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
+Двенадцать плагинов для [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 
 | Плагин | Что делает | Где работает |
 |---|---|---|
@@ -15,6 +15,7 @@
 | [`dsh-agent-desktop`](plugins/dsh-agent-desktop) | Компьютерные действия: агент видит любое приложение через accessibility-дерево ОС и управляет им по устойчивым refs — снимки, клики, ввод, клавиши, буфер обмена, скриншоты, окна и уведомления (обёртка vercel-labs/agent-desktop). | Windows, macOS, Linux |
 | [`dsh-ruflo`](plugins/dsh-ruflo) | Ruflo для агентов с областью проект или чат: память с семантическим поиском, задачи, swarm, агенты и self-learning хуки (обёртка CLI ruvnet/ruflo); состояние чата изолировано по сессиям. | Windows, macOS, Linux |
 | [`dsh-unslop`](plugins/dsh-unslop) | Де-AI текста: детерминированные сканеры phrase/structure/silhouette, извлечение охраняемых фактов, preservation-гейты, проверка suggest-предложений, LLM-перепись и voice teach/mimic со слоистыми карточками и impostor-скорингом (обёртка theclaymethod/unslop). | Windows, macOS, Linux |
+| [`dsh-llm-kimi`](plugins/dsh-llm-kimi) | Kimi в DSH двумя маршрутами: подписка **Kimi Code** (`kimi-code`, ключ из консоли Kimi Code) и оплата по токенам на платформе Kimi API (`moonshot`); Anthropic-совместимый Messages-протокол, потоковые ответы, инструменты, рассуждения и картинки, ключи вводятся на странице Models. | Windows, macOS, Linux |
 
 Все плагины — чистый JavaScript без зависимостей и без этапа сборки. Устанавливаются одинаково на всех ОС; ограничение по платформам касается только захвата экрана в `dsh-screenshot` (см. [совместимость](#совместимость-по-платформам)).
 
@@ -131,6 +132,23 @@ dsh --% plugin --profile desktop add "github:MaximFedorovtoo/dsh-plugins#<commit
     includeAttachments: true
 ```
 
+`dsh-llm-kimi`:
+
+```yaml
+- id: llm-kimi
+  config:
+    providers:
+      kimi-code:                 # подписка Kimi Code
+        baseURL: https://api.kimi.ai/coding
+        models:
+          - id: k3.1-pro
+            contextWindow: 1048576   # тарифы Pro / Allegretto и выше
+      moonshot:                  # оплата по токенам
+        apiKeyEnv: MOONSHOT_API_KEY
+```
+
+Ключи Kimi вводятся не в патче, а на странице **Settings → Models** (строки «Kimi Code (подписка)» и «Kimi API (оплата по токенам)»): они хранятся write-only в хранилище credentials. Переменные `KIMI_CODE_API_KEY` и `MOONSHOT_API_KEY` работают как запасной вариант.
+
 Ставки в тарифах — за 1 млн токенов в часы пик; вне пика применяется `offPeakFactor`. Итоги платформы в диалоге показывают расходы **всех** клиентов API-ключа, поэтому они больше суммы по проектам — это нормально, для сверки так и задумано.
 
 ## Структура репозитория
@@ -144,14 +162,15 @@ dsh-plugins/
 │   ├── dsh-codex-bridge/   # пакет dsh-codex-bridge (перенос из Codex)
 │   ├── dsh-agents-md/      # пакет dsh-agents-md (глобальные инструкции AGENTS.md)
 │   ├── dsh-instructions/   # пакет dsh-instructions (панель загрузки инструкций)
-│   └── dsh-project-portability/ # пакет dsh-project-portability (перенос проектов)
+│   ├── dsh-project-portability/ # пакет dsh-project-portability (перенос проектов)
+│   └── dsh-llm-kimi/       # пакет dsh-llm-kimi (Kimi: подписка и API)
 ├── icons/                  # иконки для индекса Discover
 ├── index.json              # индекс для вкладки Discover
 ├── INSTALL.md              # инструкция по установке (рус.)
 └── INSTALL.en.md           # installation guide (English)
 ```
 
-Все одиннадцать плагинов живут в этом репозитории; у каждого своя папка в `plugins/`, свои README и инструкция по установке.
+Все двенадцать плагинов живут в этом репозитории; у каждого своя папка в `plugins/`, свои README и инструкция по установке.
 
 ## Лицензия
 

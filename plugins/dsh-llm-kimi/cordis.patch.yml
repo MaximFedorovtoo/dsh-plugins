@@ -1,0 +1,9 @@
+# Bundle layer of dsh-llm-kimi.
+#
+# Adds the Kimi provider adapter plugin to a DeepSeek Harness profile. Route
+# defaults live in the plugin's schemastery schema (catalog.js); a deployment
+# overrides them through this entry's `config`, usually written by
+# Settings -> Models or by a later profile patch.
+- insert:
+    - id: llm-kimi
+      name: dsh-llm-kimi
