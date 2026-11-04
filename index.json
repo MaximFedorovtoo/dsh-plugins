@@ -555,14 +555,14 @@
                     {
                         "name":  "dsh-llm-kimi",
                         "title":  {
-                                      "en":  "Kimi provider: subscription and API",
-                                      "ru":  "Kimi: подписка и API",
-                                      "zh":  "Kimi 订阅与 API 提供商"
+                                      "en":  "Kimi provider and connector",
+                                      "ru":  "Kimi: провайдер и подключение",
+                                      "zh":  "Kimi 提供方与连接面板"
                                   },
                         "description":  {
-                                            "en":  "Kimi in DeepSeek Harness through two provider routes: the paid Kimi Code subscription plan (kimi-code) and pay-per-token billing on the Kimi API platform (moonshot). Anthropic-compatible Messages protocol: streaming, tool calls, reasoning, images and effort levels; API keys are entered once on Settings -\u003e Models and stored write-only.",
-                                            "ru":  "Kimi в DeepSeek Harness двумя провайдерскими маршрутами: платная подписка Kimi Code (kimi-code) и оплата по токенам на платформе Kimi API (moonshot). Anthropic-совместимый Messages-протокол: потоковые ответы, вызовы инструментов, рассуждения, картинки и уровни effort; API-ключи вводятся один раз на странице Models и хранятся write-only.",
-                                            "zh":  "在 DeepSeek Harness 中接入 Kimi 的两条提供方路由：付费 Kimi Code 订阅（kimi-code）与 Kimi API 平台按量计费（moonshot）。兼容 Anthropic 的 Messages 协议：流式输出、工具调用、推理、图片与 effort 档位；API 密钥在 Models 页面一次录入并以只写方式保存。"
+                                            "en":  "Kimi in DeepSeek Harness through two provider routes: the paid Kimi Code subscription plan (kimi-code) and pay-per-token billing on the Kimi API platform (moonshot), plus a Kimi entry in the left sidebar that saves the API key write-only, shows the live routes and models and links to the Kimi consoles and account. Anthropic-compatible Messages protocol: streaming, tool calls, reasoning, images and effort levels.",
+                                            "ru":  "Kimi в DeepSeek Harness двумя провайдерскими маршрутами: платная подписка Kimi Code (kimi-code) и оплата по токенам на платформе Kimi API (moonshot), плюс пункт Kimi в левой боковой панели: ключ сохраняется write-only, видны живые маршруты и модели, открываются консоли Kimi и аккаунт. Anthropic-совместимый Messages-протокол: потоковые ответы, вызовы инструментов, рассуждения, картинки и уровни effort.",
+                                            "zh":  "在 DeepSeek Harness 中接入 Kimi 的两条提供方路由：付费 Kimi Code 订阅（kimi-code）与 Kimi API 平台按量计费（moonshot），并在左侧边栏提供 Kimi 入口：只写保存 API 密钥、查看实时路由与模型、打开 Kimi 控制台与账户。兼容 Anthropic 的 Messages 协议：流式输出、工具调用、推理、图片与 effort 档位。"
                                         },
                         "icon":  "icons/dsh-llm-kimi.svg",
                         "author":  "Maxim Fedorov (MaximFedorovtoo)",
@@ -572,6 +572,19 @@
                                            "directory":  "plugins/dsh-llm-kimi"
                                        },
                         "versions":  [
+                                         {
+                                             "version":  "1.1.0",
+                                             "publishTimestamp":  1793789710,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "4bbbcf763d71abc7ac98e82299738087b845c70f",
+                                                            "path":  "plugins/dsh-llm-kimi"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         },
                                          {
                                              "version":  "1.0.0",
                                              "publishTimestamp":  1793786777,
