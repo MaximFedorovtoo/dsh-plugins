@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Kimi provider and connector",
+    "description": "Kimi in DeepSeek Harness: the Kimi Code subscription route and the pay-per-token Kimi API route, plus a Kimi entry in the left sidebar for saving the API key, seeing the live routes and models, and opening the Kimi consoles."
+  }
+}

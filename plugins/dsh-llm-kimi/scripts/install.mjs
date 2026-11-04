@@ -28,6 +28,7 @@ const ENTRY_ID = 'llm-kimi'
 const PLUGIN_DIR_NAME = 'dsh-llm-kimi'
 const PAYLOAD = [
   'index.js',
+  'client.js',
   'adapter.js',
   'auth.js',
   'catalog.js',
@@ -39,6 +40,7 @@ const PAYLOAD = [
   'README.md',
   'README.ru.md',
 ]
+const PAYLOAD_DIRS = ['locale']
 
 const args = process.argv.slice(2)
 const spec = { profile: 'desktop', dshHome: process.env.DSH_HOME, uninstall: false, dryRun: false }
@@ -149,6 +151,10 @@ function install() {
       if (!existsSync(source)) fail(`missing plugin file: ${source}`)
       cpSync(source, join(pluginDir, file))
     }
+    for (const dir of PAYLOAD_DIRS) {
+      const source = join(root, dir)
+      if (existsSync(source)) cpSync(source, join(pluginDir, dir), { recursive: true })
+    }
     const scripts = join(root, 'scripts')
     if (existsSync(scripts)) cpSync(scripts, join(pluginDir, 'scripts'), { recursive: true })
     log(`installed ${PAYLOAD.length} files into ${pluginDir}`)
@@ -167,11 +173,12 @@ function install() {
   console.log('')
   console.log('Next steps:')
   console.log('  1. Restart DeepSeek Harness (the profile patch is read at boot).')
-  console.log('  2. Open Settings -> Models: rows "Kimi Code (подписка)" and "Kimi API (оплата по токенам)" appear.')
-  console.log('  3. Paste the API key for the row you use:')
-  console.log('     - Kimi Code subscription: create a key at https://www.kimi.com/code/console')
-  console.log('     - Kimi API platform: create a key at https://platform.kimi.ai/console/api-keys')
-  console.log('  4. Pick the Kimi model in the composer model picker.')
+  console.log('  2. In the Web/Desktop GUI open the new Kimi entry in the left sidebar,')
+  console.log('     or open Settings -> Models: rows "Kimi Code (подписка)" and "Kimi API (оплата по токенам)" appear.')
+  console.log('  3. Paste the API key for the route you use:')
+  console.log('     - Kimi Code subscription (recommended for a subscription): https://www.kimi.ai/code/console')
+  console.log('     - Kimi API platform (pay per token): https://platform.kimi.ai/console/api-keys')
+  console.log('  4. Pick a Kimi Code model in the composer model picker.')
 }
 
 function uninstall() {

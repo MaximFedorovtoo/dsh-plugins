@@ -9,6 +9,8 @@
 
 The subscription route is the one to use when you already pay for Kimi Code: requests draw from the membership quota instead of buying separate API credits. Moonshot officially supports this in third-party tools; this plugin is the DSH adapter for it.
 
+Since 1.1.0 the package also adds a **Kimi** entry to the left sidebar of the Web/Desktop client. Open it to save the API key, see the live routes and models, and jump to the Kimi consoles and the Kimi account page. A CLI-only profile still gets the routes: the panel is one surface, not the only way in.
+
 ## Models
 
 **`kimi-code` (subscription):**
@@ -38,7 +40,7 @@ Enable **Custom plugin indexes** on the Plugins page, add the index source
 https://raw.githubusercontent.com/MaximFedorovtoo/dsh-plugins/main/index.json
 ```
 
-and install **Kimi provider** from the list.
+and install **Kimi provider and connector** from the list.
 
 ### Git
 
@@ -60,9 +62,16 @@ It copies the package to `$DSH_HOME/profiles/desktop/plugins/dsh-llm-kimi` and a
 
 ## Connect a key
 
-1. Open **Settings → Models**. Two rows appear: **Kimi Code (подписка)** (`kimi-code`) and **Kimi API (оплата по токенам)** (`moonshot`).
-2. Press **Edit** on the row you use and paste the API key. The key is stored write-only in the harness credential store under `KIMI_CODE_API_KEY` or `MOONSHOT_API_KEY`; it never lands in `cordis.patch.yml` or the session log.
-3. Open the composer model picker and choose a Kimi model (for example `Kimi K3.1 Pro`). The reasoning selector beside the model offers the route's documented levels.
+In the Web/Desktop GUI the shortest path is the **Kimi** entry in the left sidebar:
+
+1. Open **Kimi** in the sidebar. The page lists both routes with their endpoints and credential references, and marks **Kimi Code — подписка** as **Recommended** when you pay for Kimi Code.
+2. Press **Open console**, create the key in the [Kimi Code console](https://www.kimi.ai/code/console) (up to five keys, the value is shown once), paste it into the subscription card and press **Save key**. The button under the field leads to your [Kimi account](https://www.kimi.ai/settings/account) — the plan, access and balance live there.
+3. The page refreshes the saved state by itself after any key change; the models section lists what the provider currently advertises. Open the composer model picker and choose a Kimi Code model (for example `Kimi K3.1 Pro` or `Kimi for Coding`); the reasoning selector beside the model offers the route's documented levels.
+
+The same keys can be entered in **Settings → Models**, where the rows **Kimi Code (подписка)** (`kimi-code`) and **Kimi API (оплата по токенам)** (`moonshot`) appear:
+
+1. Press **Edit** on the row you use and paste the API key. The key is stored write-only in the harness credential store under `KIMI_CODE_API_KEY` or `MOONSHOT_API_KEY`; it never lands in `cordis.patch.yml` or the session log.
+2. Open the composer model picker and choose a Kimi model (for example `Kimi K3.1 Pro`).
 
 For CI or a shell-only setup the same references can be exported instead of typed:
 
@@ -97,6 +106,7 @@ Routing a new model that Kimi ships later is one patch entry: add a model with i
 ## How it works
 
 - The plugin registers both routes with the harness `llm` service and declares them in the configurable-provider directory, so the Models page can edit the connection without a restart.
+- The package ships a browser half (`client.js`) as well. It registers the `Kimi` sidebar entry and its main-column page, writes the key through `remote.credentials.set`, and reads the live route directory and model catalog through the shipped Host Remotes. It uses the host theme tokens and ships English and Russian copy, so it follows light/dark and the active language without extra wiring.
 - Requests go to `{baseURL}/v1/messages` with `stream: true`, `max_tokens`, top-level `system`, the converted tool list and `output_config.effort` for models with a selectable level. The subscription route authenticates with `x-api-key` (Claude Code's `ANTHROPIC_API_KEY` style); the API-platform route uses `Authorization: Bearer` (Claude Code's `ANTHROPIC_AUTH_TOKEN` style).
 - Responses are translated chunk by chunk: `thinking` blocks become reasoning deltas, `text` becomes text deltas, `tool_use` becomes tool calls. The thinking `signature` is persisted in adapter-owned replay state and passed back unchanged on later turns, because Kimi's Messages API requires it.
 - Tool names are validated against Kimi's `^[a-zA-Z_][a-zA-Z0-9-_]{0,127}$` grammar and mapped back, so DSH tools with unusual names keep working.
@@ -110,12 +120,14 @@ No dependencies, no build step: plain ES modules that load directly in the DSH N
 - Video input is not sent; images and text are.
 - The subscription plan's model availability and context tier are enforced by Kimi. A request for a model outside the plan fails with a provider error (usually HTTP 403); switching the row's key or plan is the fix.
 - Kimi bills the subscription quota or the API account directly. The plugin does not add a separate cost model.
+- The sidebar panel is a Web-client surface. A CLI-only composition still serves the provider routes, but it renders no panel; keys then come from Settings → Models or the environment.
 
 ## Troubleshooting
 
 | Symptom | Cause |
 |---|---|
 | `401` / `AUTH` | The key belongs to the other platform. A Kimi Code console key works only on `api.kimi.ai/coding`, a platform key only on `api.moonshot.ai/anthropic`. |
+| No **Kimi** entry in the sidebar | The Web client half is not active: install 1.1.0 or later, make sure the Web/Desktop composition serves client plugins, and reload the page. |
 | `403` right after the first request | The plan does not include that model or the 1M context tier. Try `kimi-for-coding` / `k3-256k`, or lower `contextWindow` in the patch. |
 | `400` mentioning context | The conversation exceeded the configured context window. Compact, or raise `contextWindow` for a tier that supports it. |
 | `MISSING_CREDENTIAL` | No key is stored under the row's reference and the environment does not export it. |

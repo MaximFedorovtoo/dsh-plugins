@@ -358,20 +358,20 @@ dsh plugin --profile desktop add https://github.com/MaximFedorovtoo/dsh-plugins/
 Перезапустите DSH. Python — встроенный, pip-зависимостей нет. Подробности — в
 [`plugins/dsh-unslop/README.ru.md`](plugins/dsh-unslop/README.ru.md).
 
-## 15. Kimi: подписка Kimi Code и API по токенам (`dsh-llm-kimi`)
+## 15. Kimi: подписка Kimi Code, API по токенам и панель подключения (`dsh-llm-kimi`)
 
-Плагин добавляет в DSH двух провайдеров Kimi и не требует поверхности Web/Desktop: модели доступны и в Desktop, и в CLI.
+Плагин добавляет в DSH двух провайдеров Kimi и пункт **Kimi** в левую боковую панель Web/Desktop-клиента. Маршруты работают и в CLI; панель появляется там, где есть Web-интерфейс.
 
 ```powershell
 dsh plugin --profile desktop add https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-llm-kimi
 ```
 
-Перезапустите DSH и откройте **Settings → Models**:
+Перезапустите DSH. В Web/Desktop откройте **Kimi** в левой боковой панели — на странице есть обе карточки, ссылки на консоли, аккаунт Kimi и живой список моделей; ключ сохраняется кнопкой прямо там. Те же ключи можно ввести на странице **Settings → Models**:
 
-- **Kimi Code (подписка)** (`kimi-code`) — если оплачена подписка Kimi Code; ключ создаётся в [консоли Kimi Code](https://www.kimi.com/code/console) (Create API Key), запросы списываются из квоты подписки;
+- **Kimi Code (подписка)** (`kimi-code`, помечен «Рекомендуется» при подписке) — если оплачена подписка Kimi Code; ключ создаётся в [консоли Kimi Code](https://www.kimi.ai/code/console) (Create API Key, до пяти ключей, значение показывается один раз), запросы списываются из квоты подписки; подписка, доступ и баланс — в [аккаунте Kimi](https://www.kimi.ai/settings/account);
 - **Kimi API (оплата по токенам)** (`moonshot`) — если платите за токены; ключ создаётся на [платформе Kimi API](https://platform.kimi.ai/console/api-keys).
 
-Ключ вставляется в нужную строку и хранится write-only в credential store; переменные окружения `KIMI_CODE_API_KEY` и `MOONSHOT_API_KEY` работают как запасной вариант. После этого выберите модель Kimi в поле ввода.
+Ключ хранится write-only в credential store; переменные окружения `KIMI_CODE_API_KEY` и `MOONSHOT_API_KEY` работают как запасной вариант. После этого выберите модель Kimi в поле ввода.
 
 Доступные модели и контекст подписки зависят от тарифа (Plus/Moderato — 256K, Pro/Allegretto и выше — 1M); пресет ставит 256K, на старшем тарифе контекст поднимается в патче профиля. Подробности — в [`plugins/dsh-llm-kimi/README.ru.md`](plugins/dsh-llm-kimi/README.ru.md).
 

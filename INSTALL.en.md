@@ -230,20 +230,20 @@ The profile's `package.json` gains the dependency, and `dsh.profile.bundles` gai
 
 The plugin rows (`api-spend`, `screenshot`) come from each package's own `cordis.patch.yml` layer. Keep your configuration overrides in the profile's `cordis.patch.yml`; installing a package does not overwrite them.
 
-## 10. Kimi: Kimi Code subscription and pay-per-token API (`dsh-llm-kimi`)
+## 10. Kimi: Kimi Code subscription, pay-per-token API and the connector panel (`dsh-llm-kimi`)
 
-The plugin adds two Kimi providers and works on every surface, including the CLI.
+The plugin adds two Kimi providers and a **Kimi** entry to the left sidebar of the Web/Desktop client. The routes work on every surface, including the CLI; the panel appears wherever the Web UI runs.
 
 ```sh
 dsh plugin --profile desktop add https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-llm-kimi
 ```
 
-Restart DSH and open **Settings → Models**:
+Restart DSH. In the Web/Desktop client open **Kimi** in the left sidebar: the page carries both route cards, the console and account links, the live model list, and the key field that saves the key in one press. The same keys can be entered on **Settings → Models**:
 
-- **Kimi Code (подписка)** (`kimi-code`) — for a paid Kimi Code subscription; create the key in the [Kimi Code console](https://www.kimi.com/code/console) (Create API Key) and requests draw from the subscription quota;
+- **Kimi Code (подписка)** (`kimi-code`, marked **Recommended** for a subscription) — for a paid Kimi Code subscription; create the key in the [Kimi Code console](https://www.kimi.ai/code/console) (Create API Key, up to five keys, shown once) and requests draw from the subscription quota; the plan, access and balance live in the [Kimi account](https://www.kimi.ai/settings/account);
 - **Kimi API (оплата по токенам)** (`moonshot`) — for pay-per-token billing; create the key on the [Kimi API platform](https://platform.kimi.ai/console/api-keys).
 
-Paste the key into the row you use; it is stored write-only in the credential store. `KIMI_CODE_API_KEY` and `MOONSHOT_API_KEY` environment variables work as fallbacks. Then pick a Kimi model in the composer.
+The key is stored write-only in the credential store. `KIMI_CODE_API_KEY` and `MOONSHOT_API_KEY` environment variables work as fallbacks. Then pick a Kimi model in the composer.
 
 Model availability and the subscription context tier depend on the plan (Plus/Moderato get 256K, Pro/Allegretto and above get 1M); the preset uses 256K and a higher tier raises it in the profile patch. Details: [`plugins/dsh-llm-kimi/README.md`](plugins/dsh-llm-kimi/README.md).
 

@@ -1,8 +1,8 @@
 {
   "name": "dsh-llm-kimi",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
-  "description": "Kimi (Moonshot AI) provider routes for DeepSeek Harness: the paid Kimi Code subscription plan and the pay-per-token Kimi API platform, both over the Anthropic Messages protocol, with API keys managed from Settings -> Models.",
+  "description": "Kimi (Moonshot AI) provider routes and the Kimi sidebar connector for DeepSeek Harness: the paid Kimi Code subscription plan and the pay-per-token Kimi API platform over the Anthropic Messages protocol, with API keys saved from a Kimi panel in the left sidebar or from Settings -> Models.",
   "license": "MIT",
   "author": "Maxim Fedorov (Winkerok) <https://github.com/MaximFedorovtoo>",
   "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-llm-kimi",
@@ -21,7 +21,9 @@
     "llm",
     "provider",
     "anthropic",
-    "subscription"
+    "subscription",
+    "sidebar",
+    "connector"
   ],
   "engines": {
     "dsh": ">=0.2.0 <0.3.0"
@@ -29,25 +31,43 @@
   "main": "index.js",
   "exports": {
     ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg",
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
+    "client.js",
     "adapter.js",
     "auth.js",
     "catalog.js",
     "config.js",
     "wire.js",
     "cordis.patch.yml",
+    "locale/*.json",
     "icon.svg",
     "README.md",
     "README.ru.md",
-    "scripts/install.mjs"
+    "scripts/install.mjs",
+    "test/selfcheck.mjs"
   ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
     }
+  },
+  "scripts": {
+    "test": "node test/selfcheck.mjs"
   }
 }
