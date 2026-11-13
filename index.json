@@ -621,6 +621,19 @@
                                        },
                         "versions":  [
                                          {
+                                             "version":  "1.1.0",
+                                             "publishTimestamp":  1794564961,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "0cfa4f2a5d9b608830af8d5cec41a50f34716575",
+                                                            "path":  "plugins/dsh-superuser"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         },
+                                         {
                                              "version":  "1.0.0",
                                              "publishTimestamp":  1794564330,
                                              "source":  {
