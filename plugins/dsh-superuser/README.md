@@ -121,8 +121,10 @@ bundle cannot remove those from inside the app — Windows does not allow that.
 It does offer a **one-time setup the user runs from the panel**, with exactly
 one Windows consent dialog:
 
-- **Enable** — writes `%USERPROFILE%\.dsh\superuser\windows-setup.ps1`, starts
-  it elevated once (`Start-Process -Verb RunAs`). The script sets
+- **Enable** — writes `C:\Users\Public\dsh-superuser\windows-setup.ps1` and
+  starts it elevated once (the public folder keeps the elevated command line
+  ASCII-only: a localized profile path such as `C:\Users\ПК` is mangled when it
+  crosses the elevation boundary). The script sets
   `ConsentPromptBehaviorAdmin=0` and `PromptOnSecureDesktop=0` (UAC stays
   enabled: `EnableLUA=1`; reversible, no reboot) and registers a logon task
   `DSH Superuser Elevated` (`/RL HIGHEST /IT`) that starts the current DSH

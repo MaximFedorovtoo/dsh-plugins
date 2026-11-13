@@ -120,13 +120,14 @@ Windows сам спрашивает подтверждение (UAC) перед 
 **разовую настройку, которую запускает сам пользователь из панели**, с ровно
 одним диалогом подтверждения Windows:
 
-- **Включить** — записывает `%USERPROFILE%\.dsh\superuser\windows-setup.ps1` и
-  один раз запускает его с правами администратора
-  (`Start-Process -Verb RunAs`). Скрипт ставит
-  `ConsentPromptBehaviorAdmin=0` и `PromptOnSecureDesktop=0` (UAC остаётся
-  включён: `EnableLUA=1`; обратимо, без перезагрузки) и регистрирует задачу
-  входа `DSH Superuser Elevated` (`/RL HIGHEST /IT`), запускающую текущий exe
-  DSH, — дальнейшие запуски тоже без подтверждений.
+- **Включить** — записывает `C:\Users\Public\dsh-superuser\windows-setup.ps1` и
+  один раз запускает его с правами администратора (папка `Public` держит
+  командную строку запуска в ASCII: локализованный путь профиля вроде
+  `C:\Users\ПК` искажается при передаче через границу повышения прав). Скрипт
+  ставит `ConsentPromptBehaviorAdmin=0` и `PromptOnSecureDesktop=0` (UAC
+  остаётся включён: `EnableLUA=1`; обратимо, без перезагрузки) и регистрирует
+  задачу входа `DSH Superuser Elevated` (`/RL HIGHEST /IT`), запускающую текущий
+  exe DSH, — дальнейшие запуски тоже без подтверждений.
 - **Выключить** — тот же скрипт возвращает `ConsentPromptBehaviorAdmin=5`,
   `PromptOnSecureDesktop=1` и удаляет задачу.
 - **Перезапустить** — запускает задачу сейчас (`schtasks /Run`), поднимая DSH с

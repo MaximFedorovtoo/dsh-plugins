@@ -124,13 +124,23 @@ function windowsQuote(value) {
   return `'${String(value).replace(/'/gu, "''")}'`;
 }
 
-/** Setup file paths under `%USERPROFILE%\.dsh\superuser`. */
+/**
+ * Setup file paths under an ASCII-only directory: the elevated PowerShell is
+ * started through ShellExecute, and a Cyrillic path (for example a localized
+ * user profile such as C:\Users\ПК) is mangled on the elevated command line.
+ * C:\Users\Public is writable for the interactive user and ASCII on every
+ * Windows locale.
+ */
 function windowsSetupPaths() {
   const userProfile =
     typeof process.env.USERPROFILE === 'string' && process.env.USERPROFILE !== ''
       ? process.env.USERPROFILE
       : homedir();
-  const dir = join(userProfile, '.dsh', 'superuser');
+  const publicRoot =
+    typeof process.env.PUBLIC === 'string' && process.env.PUBLIC !== ''
+      ? process.env.PUBLIC
+      : join(userProfile, '..', 'Public');
+  const dir = join(publicRoot, 'dsh-superuser');
   return { dir, script: join(dir, 'windows-setup.ps1'), log: join(dir, 'windows-setup.log') };
 }
 
