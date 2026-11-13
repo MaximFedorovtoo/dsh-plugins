@@ -599,6 +599,41 @@
                                                          }
                                          }
                                      ]
+                    },
+                    {
+                        "name":  "dsh-superuser",
+                        "title":  {
+                                      "en":  "Superuser mode and universal MCP",
+                                      "ru":  "Суперпользователь и универсальный MCP",
+                                      "zh":  "超级用户模式与通用 MCP"
+                                  },
+                        "description":  {
+                                            "en":  "Per-chat superuser mode: full file access without approval prompts, switched from the left sidebar, the SU button in the composer row or in the chat header. Universal MCP hub: name any desktop application (case-insensitive; local-language names like «хром» are understood) and the plugin creates and connects an MCP server bound to it — no command, path or other parameters needed; arbitrary stdio/HTTP MCP servers are supported too, calls run in the background in parallel, and a bundled desktop-control server ships ready.",
+                                            "ru":  "Режим суперпользователя для каждого чата: полный доступ к файлам без запросов подтверждения — переключатель в левом сайдбаре, кнопка SU в строке ввода и в заголовке чата. Универсальный MCP-хаб: назовите любое приложение (без учёта регистра, локальные названия вроде «хром» понимаются) — плагин сам создаст и подключит привязанный к нему MCP-сервер, без команды, пути и других параметров; поддерживаются и произвольные MCP-серверы stdio/HTTP, вызовы идут в фоне параллельно, а встроенный сервер управления рабочим столом готов сразу.",
+                                            "zh":  "每个对话的超级用户模式：完全文件访问且无需审批提示，可从左侧栏、输入框 SU 按钮或聊天标题处切换。通用 MCP 中枢：说出任意桌面应用名称（不区分大小写，支持“хром”等本地名称），插件会自动创建并连接绑定该应用的 MCP 服务器，无需命令、路径或其他参数；也支持任意 stdio/HTTP MCP 服务器，后台并行调用，并内置桌面控制服务器。"
+                                        },
+                        "icon":  "icons/dsh-superuser.svg",
+                        "author":  "Maxim Fedorov (MaximFedorovtoo)",
+                        "homepage":  "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-superuser",
+                        "repository":  {
+                                           "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                           "directory":  "plugins/dsh-superuser"
+                                       },
+                        "versions":  [
+                                         {
+                                             "version":  "1.0.0",
+                                             "publishTimestamp":  1794564330,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/MaximFedorovtoo/dsh-plugins",
+                                                            "commit":  "8814ff03f89760780db7e24af7aae9cf8f67457b",
+                                                            "path":  "plugins/dsh-superuser"
+                                                        },
+                                             "engines":  {
+                                                             "dsh":  "\u003e=0.2.0 \u003c0.3.0"
+                                                         }
+                                         }
+                                     ]
                     }
                 ]
 }
