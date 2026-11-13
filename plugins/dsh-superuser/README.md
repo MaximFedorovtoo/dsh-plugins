@@ -46,9 +46,11 @@ windows and do not move the pointer.
 ## Risk note
 
 Superuser mode gives the model **full file access and no confirmations**. It is
-meant for trusted, local work. Anything the OS itself asks (UAC, Windows
-Hey/SmartScreen, OS accessibility permissions) is **not** bypassed: those
-prompts still appear and still need a human.
+meant for trusted, local work. OS prompts remain by default: UAC confirmations
+are turned off only by the explicit one-time setup in the "Windows: no OS
+confirmations" block below (one user consent); SmartScreen does not apply to
+programs that are already installed, and Windows needs no separate
+accessibility permission.
 
 MCP servers added here run with the same rights as the Harness process. Only add
 servers you trust.
@@ -165,8 +167,9 @@ Notes and trade-offs:
 
 ## Limitations
 
-- OS-level prompts (UAC, SmartScreen, OS accessibility permission dialogs) are
-  not bypassed.
+- OS prompts are never bypassed silently: UAC is removed only by the one-time
+  setup in the "Windows" block (one consent), SmartScreen does not apply to
+  installed programs, and Windows needs no separate accessibility permission.
 - A tool registered while a server connects may become callable one model step
   later; `mcp_manage` is always available for the same import in the meantime.
 - Permission switching requires a live chat (a stored but unopened chat answers
