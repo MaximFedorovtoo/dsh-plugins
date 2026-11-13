@@ -1,0 +1,59 @@
+{
+  "name": "dsh-superuser",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Superuser mode and a universal MCP hub for DeepSeek Harness: one switch per chat for full file access without approval prompts, plus runtime-managed MCP servers (stdio and streamable HTTP) whose tools join the model's tool set, including a bundled desktop-control server.",
+  "license": "MIT",
+  "author": "Maxim Fedorov (Winkerok) <https://github.com/MaximFedorovtoo>",
+  "homepage": "https://github.com/MaximFedorovtoo/dsh-plugins/tree/main/plugins/dsh-superuser",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaximFedorovtoo/dsh-plugins.git",
+    "directory": "plugins/dsh-superuser"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "superuser",
+    "permissions",
+    "mcp",
+    "mcp-hub",
+    "desktop-automation"
+  ],
+  "engines": {
+    "dsh": ">=0.2.0 <0.3.0"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "desktop-mcp.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.ru.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}
