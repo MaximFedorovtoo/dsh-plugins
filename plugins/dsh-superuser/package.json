@@ -1,6 +1,6 @@
 {
   "name": "dsh-superuser",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Superuser mode and a universal MCP hub for DeepSeek Harness: one switch per chat for full file access without approval prompts, plus runtime-managed MCP servers (stdio and streamable HTTP) whose tools join the model's tool set, including a bundled desktop-control server.",
   "license": "MIT",

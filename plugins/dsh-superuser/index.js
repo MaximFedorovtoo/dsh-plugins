@@ -33,7 +33,7 @@
 
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -89,6 +89,468 @@ When the user names a desktop application, or the task needs one ("do all of it 
 The binding is sticky for this chat: call \`{"action":"app","app":"<name>"}\` again whenever needed — it reuses the same server instead of duplicating it. If the application is not running yet, the server still starts and its tools answer with a short "not running" message; once the application is started the tools work without reconnecting.
 
 Use the generic \`mcp__desktop__*\` tools for one-off actions across any application; they are not bound to one app. The permission mode and these application servers are independent: enabling superuser mode does not choose an application, and creating an app server does not change permissions.`;
+
+/** Prompt-section placement for the Windows paragraph. */
+const WINDOWS_PROMPT_SECTION_ORDER = 3061;
+
+/**
+ * One paragraph about OS-level confirmations: they are removed only by the
+ * user's own one-time setup, never by the model. Appended to every request.
+ */
+const WINDOWS_PROMPT_SECTION = `## OS-level confirmations (Windows)
+
+Windows UAC prompts, SmartScreen and similar OS dialogs are removed only by the user's own one-time setup in the Superuser panel (its "Windows" block): the plugin prepares one elevated script and the user starts it with a single Windows consent dialog. You cannot bypass UAC silently and must not claim that you can; never try to enable, disable or elevate anything yourself, and do not ask the user to disable UAC in Windows settings. The \`windowsAdmin\` tool reports the current OS state only (read-only); superuser mode changes DSH approvals and file access, not OS prompts.`;
+
+/** Scheduled task registered by the one-time Windows setup. */
+const WINDOWS_TASK_NAME = 'DSH Superuser Elevated';
+
+/** UAC policy key the setup reads and writes. */
+const UAC_KEY = 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System';
+
+/** Windows PowerShell 5.1 executable (present on every supported Windows). */
+const WINDOWS_POWERSHELL = join(
+  process.env.SystemRoot ?? 'C:\\Windows',
+  'System32',
+  'WindowsPowerShell',
+  'v1.0',
+  'powershell.exe',
+);
+
+/** Pending user-initiated setup: `{ action, requestedAt }` until the state lands. */
+let pendingWindowsSetup;
+
+/** `'…'` PowerShell literal; embedded quotes are doubled. */
+function windowsQuote(value) {
+  return `'${String(value).replace(/'/gu, "''")}'`;
+}
+
+/** Setup file paths under `%USERPROFILE%\.dsh\superuser`. */
+function windowsSetupPaths() {
+  const userProfile =
+    typeof process.env.USERPROFILE === 'string' && process.env.USERPROFILE !== ''
+      ? process.env.USERPROFILE
+      : homedir();
+  const dir = join(userProfile, '.dsh', 'superuser');
+  return { dir, script: join(dir, 'windows-setup.ps1'), log: join(dir, 'windows-setup.log') };
+}
+
+/** Render the read-only Windows status query. */
+function windowsStatusScript() {
+  return `$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+try {
+# Read the token's group list by SID: a UAC-filtered administrator token carries
+# BUILTIN\\Administrators (S-1-5-32-544) as "deny only", which IsInRole reports
+# as false. Elevated processes carry a high mandatory level SID (S-1-16-12288)
+# or the system mandatory level (S-1-16-16384).
+$whoamiGroups = (whoami.exe /groups 2>$null | Out-String)
+$isAdminUser = $whoamiGroups -match 'S-1-5-32-544'
+$elevated = ($whoamiGroups -match 'S-1-16-12288') -or ($whoamiGroups -match 'S-1-16-16384')
+$key = ${windowsQuote(UAC_KEY)}
+$props = Get-ItemProperty -LiteralPath $key -ErrorAction SilentlyContinue
+$enableLua = if ($null -ne $props) { $props.EnableLUA } else { $null }
+$consent = if ($null -ne $props) { $props.ConsentPromptBehaviorAdmin } else { $null }
+$secure = if ($null -ne $props) { $props.PromptOnSecureDesktop } else { $null }
+$task = Get-ScheduledTask -TaskName ${windowsQuote(WINDOWS_TASK_NAME)} -ErrorAction SilentlyContinue
+$taskExists = $null -ne $task
+$runLevel = ''
+$taskCommand = ''
+if ($taskExists) {
+  $runLevel = [string]$task.Principal.RunLevel
+  try { $taskCommand = [string]($task.Actions | Select-Object -First 1 -ExpandProperty Execute) } catch { }
+}
+@{ elevated = $elevated; isAdminUser = $isAdminUser; enableLua = $enableLua; consentPromptBehaviorAdmin = $consent; promptOnSecureDesktop = $secure; taskExists = $taskExists; taskRunLevel = $runLevel; taskCommand = $taskCommand } | ConvertTo-Json -Compress
+} catch {
+@{ error = $_.Exception.Message } | ConvertTo-Json -Compress
+}`;
+}
+
+/**
+ * Run one PowerShell snippet and return its trimmed stdout.
+ * @param {string} script - PowerShell source.
+ * @param {number} [timeoutMs] - budget.
+ * @returns {Promise<string>} stdout.
+ */
+function runWindowsPowerShell(script, timeoutMs = 30000) {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const encoded = Buffer.from(script, 'utf16le').toString('base64');
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const child = spawn(
+      WINDOWS_POWERSHELL,
+      ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded],
+      { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    const finish = (error, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error !== undefined) rejectPromise(error);
+      else resolvePromise(value);
+    };
+    const timer = setTimeout(() => {
+      try {
+        child.kill();
+      } catch {
+        // gone
+      }
+      finish(new Error(`Windows PowerShell timed out after ${timeoutMs} ms`));
+    }, timeoutMs);
+    timer.unref?.();
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.on('error', (error) => finish(new Error(`cannot start Windows PowerShell: ${compact(messageOf(error))}`)));
+    child.on('close', () => {
+      if (stdout.trim() !== '') {
+        finish(undefined, stdout.trim());
+        return;
+      }
+      finish(new Error(`Windows PowerShell returned no output: ${compact(stderr.trim() || 'empty')}`));
+    });
+  });
+}
+
+/**
+ * Resolve the executable the logon task should start: the Desktop GUI app
+ * (so an elevated DSH starts), never a bare runtime binary when the Host runs
+ * under a plain Node runtime.
+ * @returns {Promise<{ exePath: string, source: 'electron'|'desktop-process'|'fallback', warning?: string }>} resolved executable.
+ */
+async function resolveDesktopExecutable() {
+  if (isElectron()) return { exePath: process.execPath, source: 'electron' };
+  const script = `$ErrorActionPreference = 'SilentlyContinue'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+foreach ($name in @('DeepSeek Harness','DeepSeek Harness.exe')) {
+  $process = Get-Process -Name $name -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($null -ne $process -and -not [string]::IsNullOrWhiteSpace($process.Path)) { $process.Path; break }
+}`;
+  try {
+    const stdout = await runWindowsPowerShell(script, 15000);
+    const candidate = stdout
+      .split(/\r?\n/u)
+      .map((entry) => entry.trim())
+      .filter((entry) => entry !== '')
+      .find((entry) => existsSync(entry));
+    if (candidate !== undefined) return { exePath: candidate, source: 'desktop-process' };
+  } catch {
+    // fall through to the runtime binary
+  }
+  return {
+    exePath: process.execPath,
+    source: 'fallback',
+    warning:
+      'could not find the DeepSeek Harness desktop executable (process list empty); the logon task would start the current runtime binary and may not start DSH',
+  };
+}
+
+/**
+ * Read the current Windows confirmation state (read-only).
+ * @returns {Promise<object>} status payload for the tool and the HTTP API.
+ */
+async function readWindowsStatus() {
+  let record;
+  try {
+    const stdout = await runWindowsPowerShell(windowsStatusScript());
+    const line = stdout
+      .split(/\r?\n/u)
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.startsWith('{'))
+      .pop();
+    if (line === undefined) throw new Error('status query produced no JSON');
+    record = JSON.parse(line);
+  } catch (error) {
+    return {
+      elevated: false,
+      isAdminUser: false,
+      uac: { enableLua: null, consentPromptBehaviorAdmin: null, promptOnSecureDesktop: null },
+      uacValues: { EnableLUA: null, ConsentPromptBehaviorAdmin: null, PromptOnSecureDesktop: null },
+      uacEnabled: true,
+      task: { name: WINDOWS_TASK_NAME, exists: false, runLevel: '', command: '' },
+      autostart: { taskExists: false, runLevel: '' },
+      pendingConsent: pendingWindowsSetup !== undefined,
+      log: '',
+      notes: [/* status unavailable */],
+      error: compact(messageOf(error)),
+    };
+  }
+  if (typeof record.error === 'string') {
+    return {
+      elevated: false,
+      isAdminUser: false,
+      uac: { enableLua: null, consentPromptBehaviorAdmin: null, promptOnSecureDesktop: null },
+      uacValues: { EnableLUA: null, ConsentPromptBehaviorAdmin: null, PromptOnSecureDesktop: null },
+      uacEnabled: true,
+      task: { name: WINDOWS_TASK_NAME, exists: false, runLevel: '', command: '' },
+      autostart: { taskExists: false, runLevel: '' },
+      pendingConsent: pendingWindowsSetup !== undefined,
+      log: '',
+      notes: ['Windows status is unavailable on this host'],
+      error: compact(record.error),
+    };
+  }
+  const elevated = record.elevated === true;
+  const isAdminUser = record.isAdminUser === true;
+  const uac = {
+    enableLua: record.enableLua ?? null,
+    consentPromptBehaviorAdmin: record.consentPromptBehaviorAdmin ?? null,
+    promptOnSecureDesktop: record.promptOnSecureDesktop ?? null,
+  };
+  const task = {
+    name: WINDOWS_TASK_NAME,
+    exists: record.taskExists === true,
+    runLevel: typeof record.taskRunLevel === 'string' ? record.taskRunLevel : '',
+    command: typeof record.taskCommand === 'string' ? record.taskCommand : '',
+  };
+  const uacSilent = Number(uac.consentPromptBehaviorAdmin) === 0 && Number(uac.promptOnSecureDesktop) === 0;
+  const uacEnabled = Number(uac.enableLua ?? 1) !== 0 && !uacSilent;
+  // A user-initiated setup is pending until its expected end state appears.
+  if (pendingWindowsSetup !== undefined) {
+    const age = Date.now() - pendingWindowsSetup.requestedAt;
+    const applied =
+      (pendingWindowsSetup.action === 'enable' && Number(uac.enableLua) !== 0 && uacSilent) ||
+      (pendingWindowsSetup.action === 'disable' && !uacSilent && !task.exists) ||
+      (pendingWindowsSetup.action === 'restart' && age > 15000);
+    if (applied || age > 180000) pendingWindowsSetup = undefined;
+  }
+  const notes = [];
+  if (elevated) notes.push('This Harness process is running elevated; keep that only intentionally.');
+  else if (isAdminUser) notes.push('The account can elevate through UAC, but this Harness process is not elevated: windows owned by elevated apps are not operable from it.');
+  else notes.push('The account has no administrator rights: the one-time Windows setup cannot be enabled with it, and elevated windows are not operable.');
+  if (task.exists) notes.push(`The logon task "${WINDOWS_TASK_NAME}" is registered (RunLevel ${task.runLevel || 'unknown'}).`);
+  else notes.push(`No "${WINDOWS_TASK_NAME}" logon task: the one-time setup has not been enabled.`);
+  if (uacSilent && Number(uac.enableLua) !== 0) notes.push('UAC prompts are configured silent for administrators (setup applied).');
+  if (Number(uac.enableLua) === 0) notes.push('UAC is disabled system-wide (EnableLUA=0); this is broader than the plugin setup.');
+  const paths = windowsSetupPaths();
+  // The logon task must start the Desktop app, not the bare runtime binary the
+  // Host may be running on (plain-Node Harness). The resolved path is reported
+  // so the panel can show exactly what the task would launch.
+  const resolvedExe = await resolveDesktopExecutable();
+  if (resolvedExe.warning !== undefined) notes.push(resolvedExe.warning);
+  let log = '';
+  try {
+    const content = await readFile(paths.log, 'utf8');
+    log = content
+      .split(/\r?\n/u)
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .slice(-5)
+      .join('\n');
+  } catch {
+    log = '';
+  }
+  return {
+    elevated,
+    isAdminUser,
+    uac,
+    uacValues: {
+      EnableLUA: uac.enableLua,
+      ConsentPromptBehaviorAdmin: uac.consentPromptBehaviorAdmin,
+      PromptOnSecureDesktop: uac.promptOnSecureDesktop,
+    },
+    uacEnabled,
+    task,
+    autostart: { taskExists: task.exists, runLevel: task.runLevel },
+    pendingConsent: pendingWindowsSetup !== undefined,
+    setupLog: log,
+    log,
+    setupScriptPath: paths.script,
+    exePath: resolvedExe.exePath,
+    exePathSource: resolvedExe.source,
+    ...(resolvedExe.warning === undefined ? {} : { exePathWarning: resolvedExe.warning }),
+    taskName: WINDOWS_TASK_NAME,
+    notes,
+  };
+}
+
+/**
+ * Render the one-time Windows setup script. `-DryRun` prints the exact
+ * registry and task commands and changes nothing.
+ * @param {{ action: 'enable'|'disable', exePath: string, scriptPath: string, logPath: string }} options - script facts.
+ * @returns {string} PowerShell source.
+ */
+export function renderWindowsSetupScript(options) {
+  const action = options.action === 'disable' ? 'disable' : 'enable';
+  const exePath = String(options.exePath ?? '');
+  const scriptPath = String(options.scriptPath ?? '');
+  const logPath = String(options.logPath ?? '');
+  return `# DSH Superuser - Windows confirmation setup (generated, user-initiated).
+# Run elevated; -DryRun prints the planned changes and touches nothing.
+param(
+  [ValidateSet('enable','disable')] [string]$Action = ${windowsQuote(action)},
+  [switch]$DryRun
+)
+$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$log = ${windowsQuote(logPath)}
+$key = ${windowsQuote(UAC_KEY)}
+$task = ${windowsQuote(WINDOWS_TASK_NAME)}
+$dsh = ${windowsQuote(exePath)}
+function Write-Log([string]$line) {
+  try {
+    $dir = Split-Path -Parent $log
+    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+    Add-Content -LiteralPath $log -Value "$([DateTime]::UtcNow.ToString('o')) $line" -Encoding UTF8
+  } catch { }
+}
+$isElevated = ([Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$plan = if ($Action -eq 'enable') {
+  @(
+    "Set-ItemProperty -LiteralPath '$key' -Name EnableLUA -Value 1 -Type DWord",
+    "Set-ItemProperty -LiteralPath '$key' -Name ConsentPromptBehaviorAdmin -Value 0 -Type DWord",
+    "Set-ItemProperty -LiteralPath '$key' -Name PromptOnSecureDesktop -Value 0 -Type DWord",
+    ("schtasks.exe /Create /TN '" + $task + "' /TR '" + $dsh + "' /SC ONLOGON /RL HIGHEST /IT /F")
+  )
+} else {
+  @(
+    "Set-ItemProperty -LiteralPath '$key' -Name EnableLUA -Value 1 -Type DWord",
+    "Set-ItemProperty -LiteralPath '$key' -Name ConsentPromptBehaviorAdmin -Value 5 -Type DWord",
+    "Set-ItemProperty -LiteralPath '$key' -Name PromptOnSecureDesktop -Value 1 -Type DWord",
+    "schtasks.exe /Delete /TN '$task' /F"
+  )
+}
+if ($DryRun) {
+  Write-Output "DRY RUN: $Action - no registry or scheduled-task changes"
+  Write-Output "DSH executable: $dsh"
+  foreach ($step in $plan) { Write-Output "WOULD: $step" }
+  Write-Log "dry-run $Action (elevated=$isElevated, exe=$dsh)"
+  exit 0
+}
+Write-Log "start $Action setup (elevated=$isElevated, exe=$dsh, script=$scriptPath)"
+if (-not $isElevated) {
+  Write-Output 'ERROR: this setup must run elevated. Launch it from the Superuser panel (one Windows consent dialog).'
+  Write-Log "error: not elevated, $Action aborted"
+  exit 5
+}
+try {
+  if ($Action -eq 'enable') {
+    Set-ItemProperty -LiteralPath $key -Name EnableLUA -Value 1 -Type DWord
+    Set-ItemProperty -LiteralPath $key -Name ConsentPromptBehaviorAdmin -Value 0 -Type DWord
+    Set-ItemProperty -LiteralPath $key -Name PromptOnSecureDesktop -Value 0 -Type DWord
+    $scheduled = & schtasks.exe /Create /TN $task /TR ('"' + $dsh + '"') /SC ONLOGON /RL HIGHEST /IT /F 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "schtasks /Create failed ($LASTEXITCODE): $($scheduled -join ' ')" }
+    Write-Log 'enabled: UAC prompts silent for administrators; logon task registered'
+  } else {
+    Set-ItemProperty -LiteralPath $key -Name EnableLUA -Value 1 -Type DWord
+    Set-ItemProperty -LiteralPath $key -Name ConsentPromptBehaviorAdmin -Value 5 -Type DWord
+    Set-ItemProperty -LiteralPath $key -Name PromptOnSecureDesktop -Value 1 -Type DWord
+    $scheduled = & schtasks.exe /Delete /TN $task /F 2>&1
+    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 1) { throw "schtasks /Delete failed ($LASTEXITCODE): $($scheduled -join ' ')" }
+    Write-Log 'disabled: UAC prompts restored (5/1); logon task removed'
+  }
+  Write-Output "OK: $Action finished"
+} catch {
+  Write-Log "error: $($_.Exception.Message)"
+  Write-Output "ERROR: $($_.Exception.Message)"
+  exit 1
+}`;
+}
+
+/** Append one line to the setup log. */
+async function appendSetupLog(line) {
+  const paths = windowsSetupPaths();
+  await mkdir(paths.dir, { recursive: true });
+  await appendFile(paths.log, `${new Date().toISOString()} ${line}\n`, 'utf8');
+}
+
+/**
+ * Start one PowerShell process elevated through exactly one UAC consent, and
+ * return immediately (the child is detached and never awaited).
+ * @param {string[]} argumentList - arguments for the elevated PowerShell.
+ */
+function launchElevatedPowerShell(argumentList) {
+  const gate = `Start-Process -FilePath ${windowsQuote(WINDOWS_POWERSHELL)} -Verb RunAs -WindowStyle Hidden -ArgumentList @(${argumentList
+    .map((argument) => windowsQuote(argument))
+    .join(', ')})`;
+  const child = spawn(
+    WINDOWS_POWERSHELL,
+    ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', gate],
+    { windowsHide: true, detached: true, stdio: 'ignore' },
+  );
+  child.unref();
+}
+
+/**
+ * Generate and launch (or dry-run) the user-initiated Windows setup.
+ * @param {'enable'|'disable'|'restart'} action - requested change.
+ * @param {{ dryRun?: boolean }} [options] - dry-run writes the script but launches nothing.
+ * @returns {Promise<object>} API payload.
+ */
+async function performWindowsSetup(action, options = {}) {
+  const dryRun = options.dryRun === true;
+  const paths = windowsSetupPaths();
+  const resolvedExe = await resolveDesktopExecutable();
+  const exePath = resolvedExe.exePath;
+  const exeFields = definedFields({
+    exePath,
+    exePathSource: resolvedExe.source,
+    exePathWarning: resolvedExe.warning,
+  });
+  if (resolvedExe.warning !== undefined) await appendSetupLog(`warning: ${resolvedExe.warning}`);
+  if (action === 'restart') {
+    const command = `schtasks.exe /Run /TN "${WINDOWS_TASK_NAME}"`;
+    if (dryRun) {
+      return {
+        action,
+        pendingConsent: false,
+        dryRun: true,
+        command,
+        log: paths.log,
+        ...exeFields,
+        status: await readWindowsStatus(),
+      };
+    }
+    launchElevatedPowerShell([
+      '-NoLogo',
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-Command',
+      `& schtasks.exe /Run /TN ${windowsQuote(WINDOWS_TASK_NAME)}`,
+    ]);
+    pendingWindowsSetup = { action, requestedAt: Date.now() };
+    await appendSetupLog('restart requested through one elevated schtasks /Run');
+    return { action, pendingConsent: true, command, log: paths.log, ...exeFields, status: await readWindowsStatus() };
+  }
+  const content = renderWindowsSetupScript({
+    action,
+    exePath,
+    scriptPath: paths.script,
+    logPath: paths.log,
+  });
+  await mkdir(paths.dir, { recursive: true });
+  await writeFile(paths.script, content, 'utf8');
+  if (dryRun) {
+    await appendSetupLog(`dry-run: wrote setup script for ${action}; nothing launched`);
+    return {
+      action,
+      pendingConsent: false,
+      dryRun: true,
+      script: paths.script,
+      log: paths.log,
+      ...exeFields,
+      status: await readWindowsStatus(),
+    };
+  }
+  launchElevatedPowerShell(['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', paths.script, '-Action', action]);
+  pendingWindowsSetup = { action, requestedAt: Date.now() };
+  await appendSetupLog(`elevated setup requested for ${action} (one Windows consent expected)`);
+  return {
+    action,
+    pendingConsent: true,
+    script: paths.script,
+    log: paths.log,
+    ...exeFields,
+    status: await readWindowsStatus(),
+  };
+}
+
 
 /** @returns {string} DSH home directory. */
 function dshHome() {
@@ -1635,11 +2097,25 @@ function registerRoutes(ctx, hub, api) {
       },
     });
   });
-}
 
-/* ------------------------------------------------------------------------- *
- * Plugin entry
- * ------------------------------------------------------------------------- */
+  // Windows OS confirmations: GET is read-only status; POST only runs a
+  // user-initiated setup (the panel button) — enable/disable write one script
+  // and launch it elevated with a single Windows consent dialog.
+  register('/api/superuser/windows', ['GET', 'POST'], async (request) => {
+    if (request.method === 'GET') {
+      return jsonResponse({ ok: true, data: await readWindowsStatus() });
+    }
+    const body = await requestObject(request);
+    const action = body.action;
+    if (action !== 'enable' && action !== 'disable' && action !== 'restart') {
+      throw httpError(400, 'bad-request', 'action must be "enable", "disable" or "restart"');
+    }
+    const result = await performWindowsSetup(action, { dryRun: body.dryRun === true });
+    const status = result.status ?? (await readWindowsStatus());
+    const { status: _ignored, ...rest } = result;
+    return jsonResponse({ ok: true, data: { ...status, ...rest, status } });
+  });
+}
 
 /**
  * Attach the Host half to the profile composition.
@@ -1651,13 +2127,19 @@ export function apply(ctx, rawConfig) {
   const hub = createHub(ctx, config);
 
   // Model guidance: names the two tools and the single `mcp_manage` call that
-  // turns a user-named application into connected desktop tools.
+  // turns a user-named application into connected desktop tools, and states
+  // that Windows OS confirmations are a user-only one-time setup.
   ctx.effect(
     () => {
       ctx.systemPrompt.section({
         name: 'superuser:applications',
         order: PROMPT_SECTION_ORDER,
         text: SUPERUSER_PROMPT_SECTION,
+      });
+      ctx.systemPrompt.section({
+        name: 'superuser:os-confirmations',
+        order: WINDOWS_PROMPT_SECTION_ORDER,
+        text: WINDOWS_PROMPT_SECTION,
       });
     },
     'superuser: prompt section',
@@ -1723,6 +2205,37 @@ export function apply(ctx, rawConfig) {
   ctx.effect(
     () => {
       const disposers = [];
+      disposers.push(
+        ctx.tools.register({
+          name: 'windowsAdmin',
+          description:
+            'Report the Windows OS-confirmation state (READ-ONLY, action "status" only): whether this Harness process is ' +
+            'elevated, the UAC policy values (EnableLUA, ConsentPromptBehaviorAdmin, PromptOnSecureDesktop), and whether ' +
+            'the "DSH Superuser Elevated" logon task exists with its run level. It never changes anything: removing OS ' +
+            'confirmations is a one-time user action in the Superuser panel (one Windows consent dialog). You cannot ' +
+            'bypass UAC silently and must not claim to; never try to enable, disable or elevate anything yourself.',
+          parameters: {
+            type: 'object',
+            properties: {
+              action: {
+                type: 'string',
+                enum: ['status'],
+                description: 'status reads the current Windows/UAC/task state; no other action exists.',
+              },
+            },
+            required: ['action'],
+            additionalProperties: false,
+          },
+          output: {
+            schema: { type: 'string' },
+            render: (_args, value) => [{ type: 'text', text: String(value) }],
+          },
+          isConcurrencySafe: () => true,
+          async execute() {
+            return JSON.stringify({ ok: true, action: 'status', windows: await readWindowsStatus() }, null, 2);
+          },
+        }),
+      );
       disposers.push(
         ctx.tools.register({
           name: 'superuser_mode',
@@ -2013,4 +2526,8 @@ export const __internals = {
   normalizeInputSchema,
   dynamicToolName,
   resultText,
+  readWindowsStatus,
+  performWindowsSetup,
+  renderWindowsSetupScript,
+  windowsSetupPaths,
 };

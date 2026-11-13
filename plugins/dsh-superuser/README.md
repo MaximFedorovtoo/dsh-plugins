@@ -112,6 +112,46 @@ Errors: `404` unknown session or unknown server, `409` agent not live (the chat
 is stored but has no live agent in this process — open it and retry), `400`
 malformed JSON or invalid fields, `405` wrong method (carrier).
 
+## Windows: без подтверждений ОС
+
+Windows asks for confirmation of its own (UAC) before privileged actions. This
+bundle cannot remove those from inside the app — Windows does not allow that.
+It does offer a **one-time setup the user runs from the panel**, with exactly
+one Windows consent dialog:
+
+- **Enable** — writes `%USERPROFILE%\.dsh\superuser\windows-setup.ps1`, starts
+  it elevated once (`Start-Process -Verb RunAs`). The script sets
+  `ConsentPromptBehaviorAdmin=0` and `PromptOnSecureDesktop=0` (UAC stays
+  enabled: `EnableLUA=1`; reversible, no reboot) and registers a logon task
+  `DSH Superuser Elevated` (`/RL HIGHEST /IT`) that starts the current DSH
+  executable, so later starts need no confirmation either.
+- **Disable** — the same script restores `ConsentPromptBehaviorAdmin=5`,
+  `PromptOnSecureDesktop=1` and deletes the task.
+- **Restart** — runs the task now (`schtasks /Run`) so an elevated DSH starts;
+  the current DSH window closes.
+
+`windowsAdmin { "action": "status" }` and `GET /api/superuser/windows` are
+read-only: they report whether the current DSH runs elevated, the UAC values,
+whether the task exists and its run level, plus the last setup log lines. The
+tool cannot enable anything — only the user's click in the panel can.
+
+Notes and trade-offs:
+
+- The generated script has a `-DryRun` mode that prints the exact registry and
+  task commands without changing anything, and it refuses to change anything
+  when it is not elevated (exit code 5).
+- Disabling UAC notifications is a **security trade-off**: programs that
+  normally raise a UAC prompt will start without one. Revert with **Disable**
+  (or restore `ConsentPromptBehaviorAdmin=5`, `PromptOnSecureDesktop=1`
+  manually) and delete the logon task.
+- SmartScreen only gates downloaded/unknown binaries, so it does not appear for
+  installed tools; it is not changed by this setup.
+- Windows accessibility (UI Automation) needs no separate permission, but
+  windows owned by elevated applications can be operated only from an elevated
+  DSH — that is what the logon task provides.
+- UAC prompts of the operating system itself are not "bypassed silently":
+  the user gives one explicit consent at setup, and Windows remembers it.
+
 ## Configuration
 
 `cordis.patch.yml` row config:

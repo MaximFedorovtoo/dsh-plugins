@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Superuser and Universal MCP",
-    "description": "A per-chat superuser switch (full file access without approval prompts) with a composer button and chat-header toggle, and a universal MCP hub: add, connect, inspect and test MCP servers, including the bundled desktop-control server and one-click MCP servers bound to a chosen running application."
+    "description": "A per-chat superuser switch (full file access without approval prompts) with a composer button and chat-header toggle, a universal MCP hub (including one-click MCP servers bound to a chosen running application), and a one-time user-initiated Windows block that turns off UAC confirmation prompts and configures elevated autostart."
   }
 }

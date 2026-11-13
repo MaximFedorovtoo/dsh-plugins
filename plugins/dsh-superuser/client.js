@@ -45,9 +45,12 @@ window.__ModuleLoader__.load({
 			permission: '/api/superuser/permission',
 			servers: '/api/superuser/mcp/servers',
 			call: '/api/superuser/mcp/call',
+			windows: '/api/superuser/windows',
 		}
 
 		const TRANSPORTS = ['stdio', 'http']
+		/** The only Windows actions the panel may post. */
+		const WINDOWS_ACTIONS = ['enable', 'disable', 'restart']
 
 		/* ------------------------------------------------------------------ *
 		 * Dictionaries. EN is the key reference; RU is primary for the UI; all
@@ -170,6 +173,40 @@ window.__ModuleLoader__.load({
 			copy: 'Copy',
 			copied: 'Copied',
 			copyFailed: 'Could not copy',
+			windowsTitle: 'Windows: no confirmations',
+			windowsExplain: 'UI Automation needs no separate permission. Elevated windows are reachable only while DSH itself runs as administrator. SmartScreen appears only for downloaded or unknown files and does not get in the way of installed applications.',
+			windowsAdminLabel: 'DSH runs as administrator',
+			windowsYes: 'yes',
+			windowsNo: 'no',
+			windowsUacLabel: 'UAC confirmations',
+			windowsUacOn: 'on',
+			windowsUacOff: 'off',
+			windowsUacUnknown: 'unknown',
+			windowsUacValues: 'Registry values',
+			windowsAutostartLabel: 'Elevated autostart',
+			windowsTaskYes: 'task exists',
+			windowsTaskNo: 'no task',
+			windowsRunLevel: 'RunLevel: {value}',
+			windowsLog: 'Last setup log',
+			windowsEnable: 'Disable OS confirmations',
+			windowsEnabling: 'Enabling…',
+			windowsEnableWarning: 'Windows will show exactly one consent prompt. After it, UAC confirmations stop appearing and DSH starts with administrator rights at sign-in.',
+			windowsDisable: 'Restore previous state',
+			windowsDisabling: 'Restoring…',
+			windowsDisableConfirm: 'Restore the previous Windows settings (UAC and autostart)?',
+			windowsDisableYes: 'Yes, restore',
+			windowsRestart: 'Restart DSH as administrator',
+			windowsRestartConfirm: 'The current DSH window will close. Sessions are saved. Restart with administrator rights?',
+			windowsRestartYes: 'Restart',
+			windowsCancel: 'Cancel',
+			windowsPending: 'Waiting for the Windows confirmation…',
+			windowsNeedAdmin: 'An administrator account is required: enable it in Windows and sign in with it.',
+			windowsDoneEnable: 'Done: UAC confirmations are off and elevated autostart is configured.',
+			windowsDoneDisable: 'Done: the previous Windows settings are restored.',
+			windowsRestarting: 'DSH is restarting with administrator rights…',
+			windowsTimeout: 'Windows did not report the change within 60 seconds. Check the status and retry.',
+			windowsLoadError: 'Could not read the Windows state: {message}',
+			windowsActionError: 'The action failed: {message}',
 			appMcpNeedDesktop: 'The built-in "desktop" server was not found. Connect it in the server list above first.',
 		}
 
@@ -289,6 +326,40 @@ window.__ModuleLoader__.load({
 			copy: 'Копировать',
 			copied: 'Скопировано',
 			copyFailed: 'Не удалось скопировать',
+			windowsTitle: 'Windows: без подтверждений',
+			windowsExplain: 'UIA-доступность отдельного разрешения не требует. Окна с повышением прав доступны только когда DSH запущен от администратора. SmartScreen возникает только для скачанных или неизвестных файлов и работе с уже установленными программами не мешает.',
+			windowsAdminLabel: 'DSH с правами администратора',
+			windowsYes: 'да',
+			windowsNo: 'нет',
+			windowsUacLabel: 'UAC-подтверждения',
+			windowsUacOn: 'включены',
+			windowsUacOff: 'выключены',
+			windowsUacUnknown: 'неизвестно',
+			windowsUacValues: 'Значения реестра',
+			windowsAutostartLabel: 'Автозапуск с правами администратора',
+			windowsTaskYes: 'задача есть',
+			windowsTaskNo: 'задачи нет',
+			windowsRunLevel: 'RunLevel: {value}',
+			windowsLog: 'Последний лог настройки',
+			windowsEnable: 'Включить без подтверждений ОС',
+			windowsEnabling: 'Включаю…',
+			windowsEnableWarning: 'Windows покажет ровно один запрос согласия. После него UAC-подтверждения не появятся, а DSH будет запускаться с правами администратора при входе.',
+			windowsDisable: 'Вернуть как было',
+			windowsDisabling: 'Возвращаю…',
+			windowsDisableConfirm: 'Вернуть прежние настройки Windows — UAC и автозапуск?',
+			windowsDisableYes: 'Да, вернуть',
+			windowsRestart: 'Перезапустить DSH с правами администратора',
+			windowsRestartConfirm: 'Текущее окно DSH закроется. Сессии сохраняются. Перезапустить с правами администратора?',
+			windowsRestartYes: 'Перезапустить',
+			windowsCancel: 'Отмена',
+			windowsPending: 'Ожидаем подтверждение Windows…',
+			windowsNeedAdmin: 'Нужна учётная запись администратора: включите её в Windows и войдите под ней.',
+			windowsDoneEnable: 'Готово: UAC-подтверждения отключены, автозапуск с правами администратора настроен.',
+			windowsDoneDisable: 'Готово: прежние настройки Windows восстановлены.',
+			windowsRestarting: 'DSH перезапускается с правами администратора…',
+			windowsTimeout: 'Windows не сообщил об изменении за 60 секунд. Проверьте статус и повторите.',
+			windowsLoadError: 'Не удалось прочитать состояние Windows: {message}',
+			windowsActionError: 'Не удалось выполнить действие: {message}',
 			appMcpNeedDesktop: 'Встроенный сервер «desktop» не найден. Сначала подключите его в списке серверов выше.',
 		}
 
@@ -408,6 +479,40 @@ window.__ModuleLoader__.load({
 			copy: '复制',
 			copied: '已复制',
 			copyFailed: '无法复制',
+			windowsTitle: 'Windows：无确认提示',
+			windowsExplain: 'UIA 无需单独授权。只有 DSH 以管理员身份运行时才能访问提权窗口。SmartScreen 只对下载或未知文件出现，不影响与已安装应用的工作。',
+			windowsAdminLabel: 'DSH 以管理员身份运行',
+			windowsYes: '是',
+			windowsNo: '否',
+			windowsUacLabel: 'UAC 确认',
+			windowsUacOn: '已启用',
+			windowsUacOff: '已禁用',
+			windowsUacUnknown: '未知',
+			windowsUacValues: '注册表值',
+			windowsAutostartLabel: '以管理员身份自启动',
+			windowsTaskYes: '任务存在',
+			windowsTaskNo: '无任务',
+			windowsRunLevel: 'RunLevel：{value}',
+			windowsLog: '最近一次设置日志',
+			windowsEnable: '关闭操作系统确认提示',
+			windowsEnabling: '正在启用…',
+			windowsEnableWarning: 'Windows 只会显示一次同意提示。之后不再出现 UAC 确认，DSH 将在登录时以管理员权限启动。',
+			windowsDisable: '恢复原状',
+			windowsDisabling: '正在恢复…',
+			windowsDisableConfirm: '恢复之前的 Windows 设置（UAC 和自启动）？',
+			windowsDisableYes: '是，恢复',
+			windowsRestart: '以管理员权限重启 DSH',
+			windowsRestartConfirm: '当前 DSH 窗口将关闭，会话会保存。以管理员权限重启？',
+			windowsRestartYes: '重启',
+			windowsCancel: '取消',
+			windowsPending: '正在等待 Windows 确认…',
+			windowsNeedAdmin: '需要管理员账户：请在 Windows 中启用并以其登录。',
+			windowsDoneEnable: '完成：UAC 确认已关闭，已配置以管理员身份自启动。',
+			windowsDoneDisable: '完成：之前的 Windows 设置已恢复。',
+			windowsRestarting: 'DSH 正在以管理员权限重启…',
+			windowsTimeout: 'Windows 在 60 秒内未报告更改。请检查状态后重试。',
+			windowsLoadError: '无法读取 Windows 状态：{message}',
+			windowsActionError: '操作失败：{message}',
 			appMcpNeedDesktop: '未找到内置的“desktop”服务器。请先在上方服务器列表中连接它。',
 		}
 
@@ -494,6 +599,7 @@ window.__ModuleLoader__.load({
 			.su-modelBlock{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:8px;background:var(--dsw-alias-bg-layer-2)}
 			.su-modelRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 			.su-modelRow .su-code{flex:1 1 auto;min-width:0;padding:4px 6px}
+			.su-warning{margin:0;font-size:12px;line-height:18px;color:var(--dsw-alias-state-warn-primary)}
 			.su-root :focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
 			@media (max-width:560px){.su-inner{padding:20px 14px 48px}.su-formGrid{grid-template-columns:1fr}.su-primary{width:100%}}
 		`
@@ -664,6 +770,16 @@ window.__ModuleLoader__.load({
 				.replace(/[^a-z0-9]+/gu, '-')
 				.replace(/^-+|-+$/gu, '')
 			return slug === '' ? 'app' : slug.slice(0, 32)
+		}
+
+		async function fetchWindowsStatus() {
+			const data = await requestJson(API.windows)
+			return isRecord(data) ? data : {}
+		}
+
+		async function postWindowsAction(action) {
+			const data = await postJson(API.windows, { action })
+			return isRecord(data) ? data : {}
 		}
 
 		/* ------------------------------------------------------------------ *
@@ -1650,6 +1766,291 @@ window.__ModuleLoader__.load({
 		}
 
 		/* ------------------------------------------------------------------ *
+		 * Block 3: Windows without OS confirmations
+		 * ------------------------------------------------------------------ */
+
+		function textValueOf(value) {
+			if (typeof value === 'string') return value
+			if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+			return ''
+		}
+
+		function firstBoolean(...values) {
+			for (const value of values) if (typeof value === 'boolean') return value
+			return undefined
+		}
+
+		function firstText(...values) {
+			for (const value of values) {
+				const text = textValueOf(value)
+				if (text !== '') return text
+			}
+			return ''
+		}
+
+		/** Fold the host answer into the shape the Windows block renders (aliases tolerated). */
+		function normalizeWindowsStatus(raw) {
+			const data = isRecord(raw) ? raw : {}
+			const uac = isRecord(data.uac) ? data.uac : {}
+			const registry = isRecord(data.uacValues) ? data.uacValues : isRecord(uac.values) ? uac.values : isRecord(data.registry) ? data.registry : {}
+			const values = []
+			for (const key of Object.keys(registry)) {
+				const text = textValueOf(registry[key])
+				if (text !== '') values.push({ name: key, value: text })
+			}
+			const autostart = isRecord(data.autostart) ? data.autostart : isRecord(data.scheduledTask) ? data.scheduledTask : {}
+			const accountAdmin = firstBoolean(data.isAdminUser, data.userIsAdmin, data.accountAdmin)
+			const elevated = firstBoolean(data.elevated, data.isElevated, data.admin, data.isAdmin, uac.elevated)
+			const uacEnabled = firstBoolean(data.uacEnabled, uac.enabled, uac.uacEnabled)
+			return {
+				isAdminUser: accountAdmin === undefined ? true : accountAdmin,
+				elevated: elevated === true,
+				uacEnabled: uacEnabled === true,
+				uacKnown: uacEnabled !== undefined || values.length > 0,
+				uacValues: values,
+				taskExists: firstBoolean(autostart.taskExists, autostart.exists, data.autostartTaskExists) === true,
+				runLevel: firstText(autostart.runLevel, data.runLevel),
+				pendingConsent: firstBoolean(data.pendingConsent, data.consentPending, data.pending) === true,
+				log: firstText(data.log, data.lastLog, data.lastSetupLog, data.lastError, data.error, data.message),
+			}
+		}
+
+		/** Stable comparison value for the real OS state (the pending flag is transient). */
+		function windowsSignature(status) {
+			return [status.elevated, status.uacEnabled, status.uacKnown, status.taskExists, status.runLevel].join('|')
+		}
+
+		/** Whether the normalized status already shows the expected result of an action. */
+		function windowsExpectedReached(action, status) {
+			if (action === 'enable') return status.uacKnown && status.uacEnabled === false
+			if (action === 'disable') return status.uacKnown && status.uacEnabled === true && status.taskExists === false
+			return false
+		}
+
+		/** True when the answer looks like a Windows status object rather than an ack. */
+		function looksLikeWindowsStatus(raw) {
+			return (
+				isRecord(raw) &&
+				['isAdminUser', 'userIsAdmin', 'elevated', 'isElevated', 'admin', 'isAdmin', 'uacEnabled', 'uac', 'autostart', 'scheduledTask', 'pendingConsent'].some(
+					(key) => Object.prototype.hasOwnProperty.call(raw, key),
+				)
+			)
+		}
+
+		/**
+		 * Block 3: Windows without OS confirmations. The user starts every action; the
+		 * block only reads the state, posts the action and polls until Windows reports
+		 * the change (the enable path shows exactly one real UAC prompt).
+		 */
+		function WindowsSection({ t }) {
+			const [state, setState] = React.useState({ status: 'loading', windows: null })
+			const [error, setError] = React.useState('')
+			const [action, setAction] = React.useState('')
+			const [pending, setPending] = React.useState(false)
+			const [notice, setNotice] = React.useState('')
+			const [noticeKind, setNoticeKind] = React.useState('ok')
+			const [confirm, setConfirm] = React.useState('')
+			const alive = React.useRef(true)
+			const cancelled = React.useRef(false)
+
+			React.useEffect(() => {
+				alive.current = true
+				return () => {
+					alive.current = false
+					cancelled.current = true
+				}
+			}, [])
+
+			const load = React.useCallback(() => {
+				setState((current) => ({ status: current.windows === null ? 'loading' : current.status, windows: current.windows }))
+				fetchWindowsStatus().then(
+					(raw) => {
+						if (!alive.current) return
+						setState({ status: 'ready', windows: normalizeWindowsStatus(raw) })
+						setError('')
+					},
+					(loadFailure) => {
+						if (!alive.current) return
+						setError(messageOf(loadFailure))
+						setState((current) => ({ status: 'error', windows: current.windows }))
+					},
+				)
+			}, [])
+
+			React.useEffect(() => {
+				load()
+				return undefined
+			}, [load])
+
+			/** Poll every 1.5 s until the expected state shows up (or 60 s pass). */
+			async function pollChange(targetAction, baseline, deadline) {
+				let attempt = 0
+				while (alive.current && !cancelled.current && Date.now() < deadline) {
+					await delay(1500)
+					if (!alive.current || cancelled.current) return
+					attempt += 1
+					let next = null
+					try {
+						next = normalizeWindowsStatus(await fetchWindowsStatus())
+					} catch (pollError) {
+						continue
+					}
+					if (!alive.current) return
+					setState({ status: 'ready', windows: next })
+					const changed = windowsSignature(next) !== baseline
+					const reached = windowsExpectedReached(targetAction, next)
+					if (reached || (changed && next.pendingConsent === false && attempt >= 2)) {
+						setPending(false)
+						setAction('')
+						setNotice(t(targetAction === 'enable' ? 'windowsDoneEnable' : 'windowsDoneDisable'))
+						setNoticeKind('ok')
+						return
+					}
+				}
+				if (!alive.current) return
+				setPending(false)
+				setAction('')
+				setNotice(t('windowsTimeout'))
+				setNoticeKind('err')
+			}
+
+			function run(targetAction) {
+				if (!WINDOWS_ACTIONS.includes(targetAction) || action !== '' || pending) return
+				setConfirm('')
+				setError('')
+				setNotice('')
+				setAction(targetAction)
+				if (targetAction !== 'restart') setPending(true)
+				const baseline = state.windows === null ? '' : windowsSignature(state.windows)
+				postWindowsAction(targetAction).then(
+					(raw) => {
+						if (!alive.current) return
+						if (looksLikeWindowsStatus(raw)) setState({ status: 'ready', windows: normalizeWindowsStatus(raw) })
+						if (targetAction === 'restart') {
+							setAction('')
+							setNotice(t('windowsRestarting'))
+							setNoticeKind('ok')
+							return
+						}
+						cancelled.current = false
+						void pollChange(targetAction, baseline, Date.now() + 60000)
+					},
+					(failure) => {
+						if (!alive.current) return
+						if (targetAction === 'restart' && failure instanceof Error && failure.code === 'network') {
+							setAction('')
+							setNotice(t('windowsRestarting'))
+							setNoticeKind('ok')
+							return
+						}
+						setAction('')
+						setPending(false)
+						setError(errorText(t, 'windowsActionError', failure))
+					},
+				)
+			}
+
+			const windows = state.windows
+			const ready = state.status === 'ready' && windows !== null
+			const accountAdmin = windows === null ? true : windows.isAdminUser
+			const busy = action !== '' || pending
+			const row = (label, badgeText, variant, extra) =>
+				h(
+					'div',
+					{ className: 'su-row', key: label },
+					h('span', { className: 'su-meta' }, label),
+					h(
+						'div',
+						{ className: 'su-meta' },
+						h('span', { className: 'su-badge' + (variant === 'ok' ? ' su-badgeOk' : variant === 'warn' ? ' su-badgeWarn' : '') }, badgeText),
+						extra === undefined || extra === null ? null : extra,
+					),
+				)
+			const confirmRow = (kind, text, yesLabel) =>
+				h(
+					'span',
+					{ className: 'su-confirm' },
+					text,
+					h('button', { type: 'button', className: 'su-secondary su-danger', onClick: () => run(kind), disabled: busy }, yesLabel),
+					h('button', { type: 'button', className: 'su-secondary', onClick: () => setConfirm(''), disabled: busy }, t('windowsCancel')),
+				)
+
+			return h(
+				'section',
+				{ 'aria-label': t('windowsTitle') },
+				h(
+					'div',
+					{ className: 'su-card' },
+					h(
+						'div',
+						{ className: 'su-cardHead' },
+						h(
+							'div',
+							{ className: 'su-cardHeadText' },
+							h('h2', { className: 'su-cardTitle' }, t('windowsTitle')),
+							h('p', { className: 'su-hint' }, t('windowsExplain')),
+						),
+						h('button', { type: 'button', className: 'su-secondary', onClick: load, disabled: busy }, state.status === 'loading' ? t('refreshing') : t('refresh')),
+					),
+					state.status === 'loading' ? h('p', { className: 'su-hint' }, t('loading')) : null,
+					state.status === 'error'
+						? h(ErrorBanner, { text: t('windowsLoadError', { message: error }), onRetry: load, retryLabel: t('retry') })
+						: null,
+					ready
+						? h(
+								'div',
+								{ style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+								row(t('windowsAdminLabel'), windows.elevated ? t('windowsYes') : t('windowsNo'), windows.elevated ? 'ok' : 'warn'),
+								row(
+									t('windowsUacLabel'),
+									!windows.uacKnown ? t('windowsUacUnknown') : windows.uacEnabled ? t('windowsUacOn') : t('windowsUacOff'),
+									!windows.uacKnown ? '' : windows.uacEnabled ? 'warn' : 'ok',
+								),
+								windows.uacValues.length === 0
+									? null
+									: h(
+											'div',
+											{ className: 'su-meta' },
+											h('span', { className: 'su-label' }, t('windowsUacValues')),
+											h('span', { className: 'su-code' }, windows.uacValues.map((entry) => entry.name + '=' + entry.value).join(' · ')),
+										),
+								row(
+									t('windowsAutostartLabel'),
+									windows.taskExists ? t('windowsTaskYes') : t('windowsTaskNo'),
+									windows.taskExists ? 'ok' : '',
+									windows.runLevel === '' ? null : h('span', { className: 'su-code' }, t('windowsRunLevel', { value: windows.runLevel })),
+								),
+								windows.log === ''
+									? null
+									: h(
+											'div',
+											{ className: 'su-field' },
+											h('span', { className: 'su-label' }, t('windowsLog')),
+											h('pre', { className: 'su-result' }, windows.log),
+										),
+								)
+						: null,
+					h('p', { className: 'su-warning' }, t('windowsEnableWarning')),
+					accountAdmin ? null : h('p', { className: 'su-notice su-err', role: 'alert' }, t('windowsNeedAdmin')),
+					pending ? h('p', { className: 'su-hint', role: 'status' }, t('windowsPending')) : null,
+					error !== '' && state.status !== 'error' ? h('p', { className: 'su-notice su-err', role: 'alert' }, error) : null,
+					notice !== '' ? h('p', { className: 'su-notice ' + (noticeKind === 'err' ? 'su-err' : 'su-ok'), role: 'status' }, notice) : null,
+					h(
+						'div',
+						{ className: 'su-serverActions', style: { flexWrap: 'wrap' } },
+						h('button', { type: 'button', className: 'su-primary', onClick: () => run('enable'), disabled: busy || !accountAdmin }, action === 'enable' ? t('windowsEnabling') : t('windowsEnable')),
+						confirm === 'disable'
+							? confirmRow('disable', t('windowsDisableConfirm'), t('windowsDisableYes'))
+							: h('button', { type: 'button', className: 'su-secondary', onClick: () => setConfirm('disable'), disabled: busy || !accountAdmin }, action === 'disable' ? t('windowsDisabling') : t('windowsDisable')),
+						confirm === 'restart'
+							? confirmRow('restart', t('windowsRestartConfirm'), t('windowsRestartYes'))
+							: h('button', { type: 'button', className: 'su-secondary', onClick: () => setConfirm('restart'), disabled: busy || !accountAdmin }, t('windowsRestart')),
+					),
+				),
+			)
+		}
+
+		/* ------------------------------------------------------------------ *
 		 * Root page
 		 * ------------------------------------------------------------------ */
 
@@ -1748,6 +2149,7 @@ window.__ModuleLoader__.load({
 						onRefresh: () => setTick((value) => value + 1),
 					}),
 					h(McpSection, { t }),
+					h(WindowsSection, { t }),
 				),
 			)
 		}
